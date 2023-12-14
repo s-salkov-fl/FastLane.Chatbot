@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using FastLane.Chatbot.Contract.Configuration;
 using FastLane.Chatbot.Contract.Model;
 using Microsoft.Extensions.Options;
@@ -40,8 +41,13 @@ public class GetUnreadMessagesStatisticsAction : IAction<IBrowser, UnreadMessage
 			{
 				string theNumber = await spanUnreadNumber.EvaluateFunctionAsync<string>("(e) => { return e.innerText; }");
 
+				// TODO: After making messages send, check how chat is looking with too much incomings, to prevent failure, if count will become look like '99+' or smth
 				if (theNumber != null)
-				{ result.Messages[chatName] = int.Parse(theNumber); }
+				{
+					theNumber = Regex.Replace(theNumber, "[^0-9]", "");
+					if (!string.IsNullOrWhiteSpace(theNumber))
+					{ result.Messages[chatName] = int.Parse(theNumber); }
+				}
 			}
 		}
 
