@@ -31,6 +31,7 @@ public class GetLastMessagesAction : IAction<(IBrowser browser, string chatName,
 
 		IElementHandle[] elements = await page.QuerySelectorAllAsync(_settings.PageExpressions.UserCommentBoxXpath);
 
+
 		List<string> messages = new();
 		for (int i = elements.Length; i > 0; i--)
 		{

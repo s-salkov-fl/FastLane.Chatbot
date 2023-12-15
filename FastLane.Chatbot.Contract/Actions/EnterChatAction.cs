@@ -2,6 +2,7 @@ using FastLane.Chatbot.Contract.Configuration;
 using FastLane.Chatbot.Contract.Model;
 using Microsoft.Extensions.Options;
 using PuppeteerSharp;
+using PuppeteerSharp.Input;
 
 namespace FastLane.Chatbot.Contract.Actions;
 
@@ -42,7 +43,7 @@ public class EnterChatAction : IAction<(IBrowser browser, string chatName), bool
 
 			if (chatNamesElements.Count == 0)
 			{
-				await Task.Delay(1_000, cancellationToken);
+				await Task.Delay(1000, cancellationToken);
 				continue;
 			}
 		}
@@ -55,6 +56,7 @@ public class EnterChatAction : IAction<(IBrowser browser, string chatName), bool
 			if (curChatName == chatName)
 			{
 				await element.ClickAsync();
+				await Task.Delay(_settings.WhatsApp.GeneralMutateFailCrutchWaitMs, cancellationToken);
 				return true;
 			}
 		}

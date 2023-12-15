@@ -6,4 +6,5 @@ namespace FastLane.Chatbot.Contract.Configuration;
 public record WhatsAppChatBotSettings
 {
 	public int TimeOutContactsRefreshMs { get; init; }
+	public int GeneralMutateFailCrutchWaitMs { get; init; }
 }

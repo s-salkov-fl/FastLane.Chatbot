@@ -32,7 +32,7 @@ public class PostMessageAction : IAction<(IBrowser browser, string messageText),
 		await input.TypeAsync(messageText, new TypeOptions { Delay = 10 });
 
 		await page.Keyboard.PressAsync(Key.Enter);
-		await Task.Delay(2000, cancellationToken);
+		await Task.Delay(_settings.WhatsApp.GeneralMutateFailCrutchWaitMs, cancellationToken);
 
 		return false;
 	}

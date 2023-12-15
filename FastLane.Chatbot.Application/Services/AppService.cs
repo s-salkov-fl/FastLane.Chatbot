@@ -54,6 +54,8 @@ public class AppService : BackgroundService
 							await client.PostMessage(answer, stoppingToken);
 							_logger.LogInformation("Posted message to {ChatName} : {Message}", messageStat.Key, answer);
 						}
+
+						await client.CloseChatAsync(stoppingToken);
 					}
 
 				}

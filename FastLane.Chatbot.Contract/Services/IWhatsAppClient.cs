@@ -31,6 +31,13 @@ public interface IWhatsAppClient : IAsyncDisposable
 	Task<bool> EnterChatAsync(string chatName, CancellationToken cancellationToken);
 
 	/// <summary>
+	/// Closes currently active chat
+	/// </summary>
+	/// <param name="cancellationToken"></param>
+	/// <returns></returns>
+	Task<bool> CloseChatAsync(CancellationToken cancellationToken);
+
+	/// <summary>
 	/// Get last messages of chat with given name
 	/// </summary>
 	Task<List<string>> GetLastMessagesAsync(string chatName, int messagesCount, CancellationToken cancellationToken);
@@ -132,6 +139,11 @@ internal class WhatsAppClient : IWhatsAppClient
 	public async Task<bool> EnterChatAsync(string chatName, CancellationToken cancellationToken)
 	{
 		return await new EnterChatAction(_settings).InvokeActionAsync((_browser, chatName), cancellationToken);
+	}
+
+	public async Task<bool> CloseChatAsync(CancellationToken cancellationToken)
+	{
+		return await new CloseChatAction(_settings).InvokeActionAsync(_browser, cancellationToken);
 	}
 
 	public async Task<List<string>> GetLastMessagesAsync(string chatName, int messagesCount, CancellationToken cancellationToken)
