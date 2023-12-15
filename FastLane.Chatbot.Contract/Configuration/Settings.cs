@@ -6,4 +6,5 @@ public record Settings
 {
 	public BrowserSettings Browser { get; init; } = default!;
 	public PageExpressionsSettings PageExpressions { get; init; }
+	public WhatsAppChatBotSettings WhatsApp { get; init; }
 }

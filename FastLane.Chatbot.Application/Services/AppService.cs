@@ -41,6 +41,21 @@ public class AppService : BackgroundService
 					}
 
 					_logger.LogInformation("{Stats}", outp);
+
+					foreach (KeyValuePair<string, int> messageStat in unreadStats.Messages)
+					{
+						await client.EnterChatAsync(messageStat.Key, stoppingToken);
+						List<string> messages = await client.GetLastMessagesAsync(messageStat.Key, messageStat.Value, stoppingToken);
+						_logger.LogInformation("New messages of {ChatName}:\n{Messages}", messageStat.Key, string.Join("\n", messages));
+
+						foreach (string message in messages)
+						{
+							string answer = $"I do not understand this: \"{message}\"";
+							await client.PostMessage(answer, stoppingToken);
+							_logger.LogInformation("Posted message to {ChatName} : {Message}", messageStat.Key, answer);
+						}
+					}
+
 				}
 
 				oldStats = unreadStats;
