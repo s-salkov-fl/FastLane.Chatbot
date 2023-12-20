@@ -1,5 +1,4 @@
 using FastLane.Chatbot.Contract.Configuration;
-using FastLane.Chatbot.Contract.Model;
 using Microsoft.Extensions.Options;
 using PuppeteerSharp;
 
@@ -8,11 +7,11 @@ namespace FastLane.Chatbot.Contract.Actions;
 /// <summary>
 /// Action for type some search text into Search text box
 /// </summary>
-public class InputSearchBoxAction : IAction<(IBrowser browser, string text), bool>
+public class InputSearchBox
 {
 	private readonly Settings _settings;
 
-	public InputSearchBoxAction(IOptionsMonitor<Settings> settings)
+	public InputSearchBox(IOptionsMonitor<Settings> settings)
 	{
 		_settings = settings.CurrentValue;
 	}

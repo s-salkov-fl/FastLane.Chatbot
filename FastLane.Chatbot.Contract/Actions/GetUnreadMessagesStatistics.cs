@@ -1,6 +1,5 @@
 using System.Text.RegularExpressions;
 using FastLane.Chatbot.Contract.Configuration;
-using FastLane.Chatbot.Contract.Model;
 using Microsoft.Extensions.Options;
 using PuppeteerSharp;
 
@@ -9,15 +8,15 @@ namespace FastLane.Chatbot.Contract.Actions;
 /// <summary>
 /// Action for collect unread messages statistics
 /// </summary>
-public class GetUnreadMessagesStatisticsAction : IAction<IBrowser, UnreadMessagesStats>
+public class GetUnreadMessagesStatistics
 {
 	private readonly Settings _settings;
-	public GetUnreadMessagesStatisticsAction(IOptionsMonitor<Settings> settings)
+	public GetUnreadMessagesStatistics(IOptionsMonitor<Settings> settings)
 	{
 		_settings = settings.CurrentValue;
 	}
 
-	public async Task<UnreadMessagesStats> InvokeActionAsync(IBrowser argument, CancellationToken cancellationToken)
+	public async Task<IReadOnlyDictionary<string, int>> InvokeActionAsync(IBrowser argument, CancellationToken cancellationToken)
 	{
 		cancellationToken.ThrowIfCancellationRequested();
 		if (argument == null)
@@ -28,7 +27,7 @@ public class GetUnreadMessagesStatisticsAction : IAction<IBrowser, UnreadMessage
 		IPage page = pages.FirstOrDefault() ?? await _browser.NewPageAsync();
 
 		IElementHandle[] elements = await page.QuerySelectorAllAsync(_settings.PageExpressions.ContactContainer);
-		UnreadMessagesStats result = new();
+		Dictionary<string, int> result = new();
 
 		foreach (IElementHandle element in elements)
 		{
@@ -41,12 +40,11 @@ public class GetUnreadMessagesStatisticsAction : IAction<IBrowser, UnreadMessage
 			{
 				string theNumber = await spanUnreadNumber.EvaluateFunctionAsync<string>("(e) => { return e.innerText; }");
 
-				// TODO: After making messages send, check how chat is looking with too much incomings, to prevent failure, if count will become look like '99+' or smth
 				if (theNumber != null)
 				{
 					theNumber = Regex.Replace(theNumber, "[^0-9]", "");
 					if (!string.IsNullOrWhiteSpace(theNumber))
-					{ result.Messages[chatName] = int.Parse(theNumber); }
+					{ result[chatName] = int.Parse(theNumber); }
 				}
 			}
 		}

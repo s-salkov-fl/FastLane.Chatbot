@@ -8,15 +8,15 @@ public static class Injections
 {
 	public static IServiceCollection AddWhatsAppChatbot(this IServiceCollection services)
 	{
-		IEnumerable<Type> reflTransTypeFounded = AppDomain.CurrentDomain.GetAssemblies().SelectMany(a => a.GetTypes())
-			.Where(t => t.GetInterface(nameof(IAction)) != null && !t.IsAbstract);
-
-		foreach (Type refltype in reflTransTypeFounded)
-		{
-			services.AddTransient(refltype);
-		}
-
 		return services
+			.AddSingleton<WhatsAppClientsPool>()
 			.AddSingleton<IWhatsAppClientFactory, WhatsAppClientFactory>();
+	}
+
+	public static IServiceCollection AddChatbot(this IServiceCollection services)
+	{
+		return
+			services
+			.AddHostedService<ChatbotBackgroundWorker>();
 	}
 }

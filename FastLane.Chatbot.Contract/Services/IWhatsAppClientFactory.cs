@@ -1,6 +1,7 @@
 using FastLane.Chatbot.Browser;
 using FastLane.Chatbot.Browser.Configuration;
 using FastLane.Chatbot.Contract.Configuration;
+using FastLane.Chatbot.Contract.Model;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using PuppeteerSharp;
@@ -25,15 +26,18 @@ internal class WhatsAppClientFactory : IWhatsAppClientFactory
 	private readonly IBrowserFactory _browserFactory;
 	private readonly IServiceProvider _serviceProvider;
 	private readonly BrowserSettings _browserSettings;
+	private readonly WhatsAppClientsPool _whatsAppClientsPool;
 
 	public WhatsAppClientFactory(
 		IBrowserFactory browserFactory,
 		IServiceProvider serviceProvider,
-		IOptionsMonitor<Settings> settings)
+		IOptionsMonitor<Settings> settings,
+		WhatsAppClientsPool whatsAppClientsPool)
 	{
 		_browserSettings = settings.CurrentValue.Browser;
 		_browserFactory = browserFactory;
 		_serviceProvider = serviceProvider;
+		_whatsAppClientsPool = whatsAppClientsPool;
 	}
 
 	public async Task<IWhatsAppClient> CreateClientAsync(CancellationToken cancellationToken)
@@ -44,6 +48,7 @@ internal class WhatsAppClientFactory : IWhatsAppClientFactory
 		{
 			WhatsAppClient client = ActivatorUtilities.CreateInstance<WhatsAppClient>(_serviceProvider, browser);
 			await client.WaitForLoginAsync(cancellationToken);
+			_whatsAppClientsPool.Add(client);
 			return client;
 		}
 		catch

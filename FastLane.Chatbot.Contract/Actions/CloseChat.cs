@@ -1,5 +1,4 @@
 using FastLane.Chatbot.Contract.Configuration;
-using FastLane.Chatbot.Contract.Model;
 using Microsoft.Extensions.Options;
 using PuppeteerSharp;
 
@@ -8,11 +7,11 @@ namespace FastLane.Chatbot.Contract.Actions;
 /// <summary>
 /// Closes currently opened chat
 /// </summary>
-public class CloseChatAction : IAction<IBrowser, bool>
+public class CloseChat
 {
 	private readonly Settings _settings;
 
-	public CloseChatAction(IOptionsMonitor<Settings> settings)
+	public CloseChat(IOptionsMonitor<Settings> settings)
 	{
 		_settings = settings.CurrentValue;
 	}

@@ -1,19 +1,17 @@
 using FastLane.Chatbot.Contract.Configuration;
-using FastLane.Chatbot.Contract.Model;
 using Microsoft.Extensions.Options;
 using PuppeteerSharp;
-using PuppeteerSharp.Input;
 
 namespace FastLane.Chatbot.Contract.Actions;
 
 /// <summary>
 /// Finds chat name in chat list and clicks on it, i.e. enters exact chat
 /// </summary>
-public class EnterChatAction : IAction<(IBrowser browser, string chatName), bool>
+public class EnterChat
 {
 	private readonly Settings _settings;
 
-	public EnterChatAction(IOptionsMonitor<Settings> settings)
+	public EnterChat(IOptionsMonitor<Settings> settings)
 	{
 		_settings = settings.CurrentValue;
 	}

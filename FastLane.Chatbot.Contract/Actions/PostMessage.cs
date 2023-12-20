@@ -1,5 +1,4 @@
 using FastLane.Chatbot.Contract.Configuration;
-using FastLane.Chatbot.Contract.Model;
 using Microsoft.Extensions.Options;
 using PuppeteerSharp;
 using PuppeteerSharp.Input;
@@ -9,11 +8,11 @@ namespace FastLane.Chatbot.Contract.Actions;
 /// <summary>
 /// Type message text into dialog textbox and press Enter key to send
 /// </summary>
-public class PostMessageAction : IAction<(IBrowser browser, string messageText), bool>
+public class PostMessage
 {
 	private readonly Settings _settings;
 
-	public PostMessageAction(IOptionsMonitor<Settings> settings)
+	public PostMessage(IOptionsMonitor<Settings> settings)
 	{
 		_settings = settings.CurrentValue;
 	}

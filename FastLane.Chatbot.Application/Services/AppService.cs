@@ -24,43 +24,53 @@ public class AppService : BackgroundService
 			_logger.LogInformation("Create the Messenger client");
 			await using IWhatsAppClient client = await _clientFactory.CreateClientAsync(stoppingToken);
 
-			_logger.LogInformation("Monitoring new messages");
-			UnreadMessagesStats oldStats = null;
+			IReadOnlyDictionary<string, int> oldUnreads = new Dictionary<string, int>();
 
-			while (!stoppingToken.IsCancellationRequested)
+			client.MessageReceived += async () =>
 			{
-				await Task.Delay(1000, stoppingToken);
-				UnreadMessagesStats unreadStats = await client.GetUnreadMessagesStatsAsync(stoppingToken);
+				_logger.LogInformation("New messages event");
+				IReadOnlyDictionary<string, int> unreads = await client.GetChatInboxCountAsync(stoppingToken);
 
-				if (!unreadStats.Equals(oldStats) && unreadStats.Messages.Count != 0)
+				if (!((unreads == oldUnreads) || (unreads.Count == oldUnreads.Count && !unreads.Except(oldUnreads).Any())))
 				{
 					string outp = "New message statistics:\n";
-					foreach (KeyValuePair<string, int> messageStat in unreadStats.Messages)
+					foreach (KeyValuePair<string, int> messageStat in unreads)
 					{
 						outp += $"\"{messageStat.Key}\" - {messageStat.Value} unread messages\n";
 					}
 
 					_logger.LogInformation("{Stats}", outp);
 
-					foreach (KeyValuePair<string, int> messageStat in unreadStats.Messages)
+					foreach (KeyValuePair<string, int> messageStat in unreads)
 					{
-						await client.EnterChatAsync(messageStat.Key, stoppingToken);
-						List<string> messages = await client.GetLastMessagesAsync(messageStat.Key, messageStat.Value, stoppingToken);
-						_logger.LogInformation("New messages of {ChatName}:\n{Messages}", messageStat.Key, string.Join("\n", messages));
+						IReadOnlyList<ChatMessage> messages = await client.GetMessagesAsync(messageStat.Key, stoppingToken);
+						IEnumerable<ChatMessage> userNewMessages = messages.Where(m => m.Member == ChatMember.User).Take(messageStat.Value);
+						_logger.LogInformation("New messages of {ChatName}:\n{Messages}", messageStat.Key, string.Join("\n", userNewMessages.Select(m => m.Content)));
 
-						foreach (string message in messages)
+						foreach (ChatMessage message in userNewMessages)
 						{
-							string answer = $"I do not understand this: \"{message}\"";
-							await client.PostMessage(answer, stoppingToken);
+							string answer = $"I do not understand this: \"{message.Content}\"";
+							await client.PostAsync(messageStat.Key, answer, stoppingToken);
 							_logger.LogInformation("Posted message to {ChatName} : {Message}", messageStat.Key, answer);
 						}
-
-						await client.CloseChatAsync(stoppingToken);
 					}
-
 				}
 
-				oldStats = unreadStats;
+				oldUnreads = unreads;
+			};
+
+			//sample get some chat correspondence
+			//string chatNameInit = "Prokhor";
+			//IReadOnlyList<ChatMessage> lastMessages = await client.GetMessagesAsync(chatNameInit, stoppingToken);
+
+			//_logger.LogInformation("Last {Count} messages of {ChatName}:\n{Messages}", lastMessages.Count, chatNameInit, string.Join("\n"
+			//	, lastMessages.Select(m => m.Member.ToString() + ":" + m.Content)));
+
+			_logger.LogInformation("Monitoring new messages");
+
+			while (!stoppingToken.IsCancellationRequested)
+			{
+				await Task.Delay(1000, stoppingToken);
 			}
 		}
 		catch (OperationCanceledException)

@@ -13,55 +13,50 @@ namespace FastLane.Chatbot.Contract.Services;
 public interface IWhatsAppClient : IAsyncDisposable
 {
 	/// <summary>
-	/// Gets chatnames and number of unread messages
+	/// New message was received
 	/// </summary>
-	Task<UnreadMessagesStats> GetUnreadMessagesStatsAsync(CancellationToken cancellationToken);
+	event Action? MessageReceived;
 
 	/// <summary>
-	/// Filter chat list by typing text into Search box
+	/// Read last available message from chat with given name(user name)
 	/// </summary>
-	/// <param name="searchText">Chat name piece to enter into search box</param>
-	Task<object> FilterChatsAsync(string searchText, CancellationToken cancellationToken);
+	Task<IReadOnlyList<ChatMessage>> GetMessagesAsync(string chat, CancellationToken cancellationToken);
 
 	/// <summary>
-	/// Enters to specified chat
-	/// </summary>
-	/// <param name="chatName">Name of chat to open</param>
-	/// <returns>True if operation was successfull</returns>
-	Task<bool> EnterChatAsync(string chatName, CancellationToken cancellationToken);
-
-	/// <summary>
-	/// Closes currently active chat
+	/// Get list of chats with number of unread messages inside. (Calls <see cref="MessageReceived"/> event if statistics was changed since last query).
 	/// </summary>
 	/// <param name="cancellationToken"></param>
 	/// <returns></returns>
-	Task<bool> CloseChatAsync(CancellationToken cancellationToken);
+	Task<IReadOnlyDictionary<string, int>> GetChatInboxCountAsync(CancellationToken cancellationToken);
 
 	/// <summary>
-	/// Get last messages of chat with given name
+	/// Open chat with specified name, send message and close chat
 	/// </summary>
-	Task<List<string>> GetLastMessagesAsync(string chatName, int messagesCount, CancellationToken cancellationToken);
+	Task PostAsync(string chat, string content, CancellationToken cancellationToken);
 
-	/// <summary>
-	/// Send message to active chat
-	/// </summary>
-	Task<bool> PostMessage(string message, CancellationToken cancellationToken);
 }
 
-internal class WhatsAppClient : IWhatsAppClient
+internal class WhatsAppClient : IWhatsAppClient, IDisposable
 {
 	private readonly IBrowser _browser;
 	private readonly ILogger<WhatsAppClient> _logger;
 	private readonly IOptionsMonitor<Settings> _settings;
+	private IReadOnlyDictionary<string, int> _currentChatUnreadMessages = new Dictionary<string, int>();
+	private readonly WhatsAppClientsPool _whatsAppClientsPool;
+	private readonly SemaphoreSlim _semaphore = new(1, 1);
+
+	public event Action? MessageReceived;
 
 	public WhatsAppClient(
 		IBrowser browser,
 		ILogger<WhatsAppClient> logger,
-		IOptionsMonitor<Settings> settings)
+		IOptionsMonitor<Settings> settings,
+		WhatsAppClientsPool whatsAppClientsPool)
 	{
 		_browser = browser;
 		_logger = logger;
 		_settings = settings;
+		_whatsAppClientsPool = whatsAppClientsPool;
 	}
 
 	public async ValueTask DisposeAsync()
@@ -126,51 +121,101 @@ internal class WhatsAppClient : IWhatsAppClient
 		return pages.FirstOrDefault() ?? await _browser.NewPageAsync();
 	}
 
-	public async Task<UnreadMessagesStats> GetUnreadMessagesStatsAsync(CancellationToken cancellationToken)
+	public async Task<IReadOnlyDictionary<string, int>> GetChatInboxCountAsync(CancellationToken cancellationToken)
 	{
-		return await new GetUnreadMessagesStatisticsAction(_settings).InvokeActionAsync(_browser, cancellationToken);
+		await _semaphore.WaitAsync(cancellationToken);
+		try
+		{
+			IReadOnlyDictionary<string, int> newStat = await new GetUnreadMessagesStatistics(_settings).InvokeActionAsync(_browser, cancellationToken);
+
+			if (MessageReceived != null &&
+				!((newStat == _currentChatUnreadMessages) || (newStat.Count == _currentChatUnreadMessages.Count && !newStat.Except(_currentChatUnreadMessages).Any()))
+				)
+			{
+				MessageReceived?.Invoke();
+			}
+
+			return _currentChatUnreadMessages = newStat;
+		}
+		finally { _semaphore.Release(); }
 	}
 
+	/// <summary>
+	/// Filter chat list by typing text into Search box
+	/// </summary>
+	/// <param name="searchText">Chat name piece to enter into search box</param>
 	public async Task<object> FilterChatsAsync(string searchText, CancellationToken cancellationToken)
 	{
-		return await new InputSearchBoxAction(_settings).InvokeActionAsync((_browser, searchText), cancellationToken);
+		return await new InputSearchBox(_settings).InvokeActionAsync((_browser, searchText), cancellationToken);
 	}
 
+	/// <summary>
+	/// Enters to specified chat
+	/// </summary>
+	/// <param name="chatName">Name of chat to open</param>
+	/// <returns>True if operation was successfull</returns>
 	public async Task<bool> EnterChatAsync(string chatName, CancellationToken cancellationToken)
 	{
-		return await new EnterChatAction(_settings).InvokeActionAsync((_browser, chatName), cancellationToken);
+		return await new EnterChat(_settings).InvokeActionAsync((_browser, chatName), cancellationToken);
 	}
 
+	/// <summary>
+	/// Closes currently active chat
+	/// </summary>
+	/// <param name="cancellationToken"></param>
 	public async Task<bool> CloseChatAsync(CancellationToken cancellationToken)
 	{
-		return await new CloseChatAction(_settings).InvokeActionAsync(_browser, cancellationToken);
+		return await new CloseChat(_settings).InvokeActionAsync(_browser, cancellationToken);
 	}
 
-	public async Task<List<string>> GetLastMessagesAsync(string chatName, int messagesCount, CancellationToken cancellationToken)
+	/// <summary>
+	/// Read last available message from chat with given name(user name)
+	/// </summary>
+	public async Task<IReadOnlyList<ChatMessage>> GetMessagesAsync(string chat, CancellationToken cancellationToken)
 	{
-		return await new GetLastMessagesAction(_settings).InvokeActionAsync((_browser, chatName, messagesCount), cancellationToken);
-	}
-
-	public async Task<List<string>> GetNewMessagesAsync(string chatName, CancellationToken cancellationToken)
-	{
-		await FilterChatsAsync("", cancellationToken);
-		UnreadMessagesStats unreads = await GetUnreadMessagesStatsAsync(cancellationToken);
-
-		foreach (KeyValuePair<string, int> unreadChatStat in unreads.Messages)
+		await _semaphore.WaitAsync(cancellationToken);
+		try
 		{
-			if (unreadChatStat.Key == chatName)
+			if (!await EnterChatAsync(chat, cancellationToken))
+			{ throw new InvalidOperationException("Unabled to enter chat " + chat); }
+
+			IReadOnlyList<ChatMessage> result = await new GetLastMessages(_settings).InvokeActionAsync(_browser, ChatMember.Bot | ChatMember.User, cancellationToken);
+
+			return !await CloseChatAsync(cancellationToken) ? throw new InvalidOperationException("Unabled to close active chat ") : result;
+		}
+		finally
+		{ _semaphore.Release(); }
+	}
+
+	public async Task PostAsync(string chat, string content, CancellationToken cancellationToken)
+	{
+		await _semaphore.WaitAsync(cancellationToken);
+		try
+		{
+			await EnterChatAsync(chat, cancellationToken);
+			await new PostMessage(_settings).InvokeActionAsync((_browser, content), cancellationToken);
+			await CloseChatAsync(cancellationToken);
+		}
+		finally { _semaphore.Release(); }
+	}
+
+	public void Dispose()
+	{
+		if (_whatsAppClientsPool != null && _whatsAppClientsPool.Count != 0)
+		{
+			if (_whatsAppClientsPool.Count == 1)
+			{ _whatsAppClientsPool?.TryTake(out IWhatsAppClient? _); }
+			else
 			{
-				return !await new EnterChatAction(_settings).InvokeActionAsync((_browser, chatName), cancellationToken)
-					? throw new InvalidDataException("Unable to open chat - \"" + chatName + "\"")
-					: await new GetLastMessagesAction(_settings).InvokeActionAsync((_browser, chatName, unreadChatStat.Value), cancellationToken);
+				IWhatsAppClient[] backClients = _whatsAppClientsPool.ToArray();
+				_whatsAppClientsPool.Clear();
+
+				foreach (IWhatsAppClient client in backClients)
+				{
+					if (client != this)
+					{ _whatsAppClientsPool.Add(client); }
+				}
 			}
 		}
-
-		return new List<string>();
-	}
-
-	public async Task<bool> PostMessage(string message, CancellationToken cancellationToken)
-	{
-		return await new PostMessageAction(_settings).InvokeActionAsync((_browser, message), cancellationToken);
 	}
 }

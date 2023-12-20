@@ -12,6 +12,7 @@ IHost host = Host.CreateDefaultBuilder(args)
 		.Configure<Settings>(context.Configuration)
 		.AddSingleton(e => e.GetRequiredService<IOptionsMonitor<Settings>>().CurrentValue.Browser)
 		.AddBrowser()
+		.AddChatbot()
 		.AddWhatsAppChatbot();
 
 	services.AddHostedService<AppService>();
