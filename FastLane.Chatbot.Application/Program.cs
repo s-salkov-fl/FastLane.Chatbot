@@ -1,8 +1,9 @@
 using FastLane.Chatbot.Application.Services;
+using FastLane.Chatbot.Browser;
+using FastLane.Chatbot.WhatsApp;
+using FastLane.Chatbot.Facebook;
 using FastLane.Chatbot.Contract.Configuration;
 using Microsoft.Extensions.Options;
-using FastLane.Chatbot.Browser;
-using FastLane.Chatbot.Contract;
 
 IHost host = Host.CreateDefaultBuilder(args)
 	.ConfigureServices((context, services) =>
@@ -12,8 +13,10 @@ IHost host = Host.CreateDefaultBuilder(args)
 		.Configure<Settings>(context.Configuration)
 		.AddSingleton(e => e.GetRequiredService<IOptionsMonitor<Settings>>().CurrentValue.Browser)
 		.AddBrowser()
-		.AddChatbot()
-		.AddWhatsAppChatbot();
+		.AddWhatsApp()
+		.AddWhatsAppChatbot()
+		.AddFacebook()
+		.AddFacebookChatbot();
 
 	services.AddHostedService<AppService>();
 })

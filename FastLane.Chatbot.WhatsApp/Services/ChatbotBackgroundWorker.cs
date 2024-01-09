@@ -1,15 +1,10 @@
-using FastLane.Chatbot.Contract.Model;
+using FastLane.Chatbot.WhatsApp.Model;
 using Microsoft.Extensions.Hosting;
 
-namespace FastLane.Chatbot.Contract.Services;
-internal class ChatbotBackgroundWorker : BackgroundService
+namespace FastLane.Chatbot.WhatsApp.Services;
+internal class ChatbotBackgroundWorker(WhatsAppClientsPool whatsAppClients) : BackgroundService
 {
-	private readonly WhatsAppClientsPool _whatsAppClients;
-
-	public ChatbotBackgroundWorker(WhatsAppClientsPool whatsAppClients)
-	{
-		_whatsAppClients = whatsAppClients;
-	}
+	private readonly WhatsAppClientsPool _whatsAppClients = whatsAppClients;
 
 	protected override async Task ExecuteAsync(CancellationToken stoppingToken)
 	{

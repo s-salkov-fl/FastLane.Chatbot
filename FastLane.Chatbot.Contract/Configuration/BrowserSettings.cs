@@ -1,4 +1,4 @@
-namespace FastLane.Chatbot.Browser.Configuration;
+namespace FastLane.Chatbot.Contract.Configuration;
 
 /// <summary>
 /// Configuration for launching browser by Puppeteer

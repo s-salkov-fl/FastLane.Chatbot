@@ -1,67 +1,39 @@
-using FastLane.Chatbot.Contract.Actions;
+using FastLane.Chatbot.WhatsApp.Actions;
 using FastLane.Chatbot.Contract.Configuration;
-using FastLane.Chatbot.Contract.Model;
+using FastLane.Chatbot.WhatsApp.Model;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using PuppeteerSharp;
+using FastLane.Chatbot.Contract.Model;
 
-namespace FastLane.Chatbot.Contract.Services;
+namespace FastLane.Chatbot.WhatsApp.Services;
 
 /// <summary>
 /// WhatsApp browser routines
 /// </summary>
-public interface IWhatsAppClient : IAsyncDisposable
+public interface IWhatsAppClient : IChatbotClient
 {
-	/// <summary>
-	/// New message was received
-	/// </summary>
-	event Action? MessageReceived;
-
-	/// <summary>
-	/// Read last available message from chat with given name(user name)
-	/// </summary>
-	Task<IReadOnlyList<ChatMessage>> GetMessagesAsync(string chat, CancellationToken cancellationToken);
-
-	/// <summary>
-	/// Get list of chats with number of unread messages inside. (Calls <see cref="MessageReceived"/> event if statistics was changed since last query).
-	/// </summary>
-	/// <param name="cancellationToken"></param>
-	/// <returns></returns>
-	Task<IReadOnlyDictionary<string, int>> GetChatInboxCountAsync(CancellationToken cancellationToken);
-
-	/// <summary>
-	/// Open chat with specified name, send message and close chat
-	/// </summary>
-	Task PostAsync(string chat, string content, CancellationToken cancellationToken);
-
 }
 
-internal class WhatsAppClient : IWhatsAppClient, IDisposable
+internal class WhatsAppClient(
+	IBrowser browser,
+	ILogger<WhatsAppClient> logger,
+	IOptionsMonitor<Settings> settings,
+	WhatsAppClientsPool whatsAppClientsPool) : IWhatsAppClient, IDisposable
 {
-	private readonly IBrowser _browser;
-	private readonly ILogger<WhatsAppClient> _logger;
-	private readonly IOptionsMonitor<Settings> _settings;
+	private readonly IBrowser _browser = browser;
+	private readonly ILogger<WhatsAppClient> _logger = logger;
+	private readonly IOptionsMonitor<Settings> _settings = settings;
 	private IReadOnlyDictionary<string, int> _currentChatUnreadMessages = new Dictionary<string, int>();
-	private readonly WhatsAppClientsPool _whatsAppClientsPool;
+	private readonly WhatsAppClientsPool _whatsAppClientsPool = whatsAppClientsPool;
 	private readonly SemaphoreSlim _semaphore = new(1, 1);
 
 	public event Action? MessageReceived;
 
-	public WhatsAppClient(
-		IBrowser browser,
-		ILogger<WhatsAppClient> logger,
-		IOptionsMonitor<Settings> settings,
-		WhatsAppClientsPool whatsAppClientsPool)
-	{
-		_browser = browser;
-		_logger = logger;
-		_settings = settings;
-		_whatsAppClientsPool = whatsAppClientsPool;
-	}
-
 	public async ValueTask DisposeAsync()
 	{
 		await _browser.DisposeAsync();
+		Dispose();
 	}
 
 	public async Task WaitForLoginAsync(CancellationToken cancellationToken)
@@ -129,7 +101,7 @@ internal class WhatsAppClient : IWhatsAppClient, IDisposable
 			IReadOnlyDictionary<string, int> newStat = await new GetUnreadMessagesStatistics(_settings).InvokeActionAsync(_browser, cancellationToken);
 
 			if (MessageReceived != null &&
-				!((newStat == _currentChatUnreadMessages) || (newStat.Count == _currentChatUnreadMessages.Count && !newStat.Except(_currentChatUnreadMessages).Any()))
+				!(newStat == _currentChatUnreadMessages || (newStat.Count == _currentChatUnreadMessages.Count && !newStat.Except(_currentChatUnreadMessages).Any()))
 				)
 			{
 				MessageReceived?.Invoke();
@@ -169,7 +141,7 @@ internal class WhatsAppClient : IWhatsAppClient, IDisposable
 	}
 
 	/// <summary>
-	/// Read last available message from chat with given name(user name)
+	/// Read last available messages from chat with given name(user name)
 	/// </summary>
 	public async Task<IReadOnlyList<ChatMessage>> GetMessagesAsync(string chat, CancellationToken cancellationToken)
 	{
@@ -207,7 +179,7 @@ internal class WhatsAppClient : IWhatsAppClient, IDisposable
 			{ _whatsAppClientsPool?.TryTake(out IWhatsAppClient? _); }
 			else
 			{
-				IWhatsAppClient[] backClients = _whatsAppClientsPool.ToArray();
+				IWhatsAppClient[] backClients = [.. _whatsAppClientsPool];
 				_whatsAppClientsPool.Clear();
 
 				foreach (IWhatsAppClient client in backClients)
@@ -217,5 +189,7 @@ internal class WhatsAppClient : IWhatsAppClient, IDisposable
 				}
 			}
 		}
+
+		GC.SuppressFinalize(this);
 	}
 }

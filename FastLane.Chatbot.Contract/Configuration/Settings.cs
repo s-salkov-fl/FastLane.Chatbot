@@ -1,10 +1,10 @@
-using FastLane.Chatbot.Browser.Configuration;
-
 namespace FastLane.Chatbot.Contract.Configuration;
 
 public record Settings
 {
 	public BrowserSettings Browser { get; init; } = default!;
-	public PageExpressionsSettings PageExpressions { get; init; }
-	public WhatsAppChatBotSettings WhatsApp { get; init; }
+	public required WhatsAppPageExpressionsSettings WhatsAppPageExpressions { get; init; }
+	public required FacebookPageExpressionsSettings FaceBookPageExpressions { get; init; }
+	public required WhatsAppChatBotSettings WhatsApp { get; init; }
+	public required FacebookChatBotSettings Facebook { get; init; }
 }

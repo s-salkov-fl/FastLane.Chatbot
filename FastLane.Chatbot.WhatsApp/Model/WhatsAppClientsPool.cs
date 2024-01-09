@@ -1,7 +1,7 @@
 using System.Collections.Concurrent;
-using FastLane.Chatbot.Contract.Services;
+using FastLane.Chatbot.WhatsApp.Services;
 
-namespace FastLane.Chatbot.Contract.Model;
+namespace FastLane.Chatbot.WhatsApp.Model;
 internal class WhatsAppClientsPool : ConcurrentBag<IWhatsAppClient>
 {
 }

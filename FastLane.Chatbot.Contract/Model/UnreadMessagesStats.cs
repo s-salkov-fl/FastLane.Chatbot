@@ -8,7 +8,7 @@ public class UnreadMessagesStats
 	/// <summary>
 	/// Chat names and number of unread messages
 	/// </summary>
-	public Dictionary<string, int> Messages { get; set; } = new Dictionary<string, int>();
+	public Dictionary<string, int> Messages { get; set; } = [];
 
 	/// <summary>
 	/// Checks whether chat names and number unread messages are matching in two instances
@@ -22,10 +22,10 @@ public class UnreadMessagesStats
 
 			foreach (KeyValuePair<string, int> message in Messages)
 			{
-				if (!unreadMessagesStats.Messages.ContainsKey(message.Key))
+				if (!unreadMessagesStats.Messages.TryGetValue(message.Key, out int value))
 				{ return false; }
 
-				if (unreadMessagesStats.Messages[message.Key] != message.Value)
+				if (value != message.Value)
 				{ return false; }
 			}
 

@@ -1,4 +1,4 @@
-using FastLane.Chatbot.Browser.Configuration;
+using FastLane.Chatbot.Contract.Configuration;
 using PuppeteerSharp;
 
 namespace FastLane.Chatbot.Browser;
@@ -11,7 +11,7 @@ public interface IBrowserFactory
 	Task<IBrowser> CreateBrowserAsync(string profile, CancellationToken cancellationToken);
 }
 
-internal class BrowserFactory : IBrowserFactory, IDisposable
+internal class BrowserFactory(BrowserSettings settings) : IBrowserFactory, IDisposable
 {
 	private static readonly IReadOnlyList<string> _browserArgs = new[]
 	{
@@ -28,14 +28,7 @@ internal class BrowserFactory : IBrowserFactory, IDisposable
 	};
 
 	private readonly SemaphoreSlim _sync = new(1, 1);
-	private readonly BrowserSettings _settings;
-
-
-	public BrowserFactory(BrowserSettings settings)
-	{
-		_settings = settings;
-	}
-
+	private readonly BrowserSettings _settings = settings;
 
 	public async Task<IBrowser> CreateBrowserAsync(string profile, CancellationToken cancellationToken)
 	{
@@ -48,7 +41,7 @@ internal class BrowserFactory : IBrowserFactory, IDisposable
 				Headless = false,
 				ExecutablePath = _settings.Path,
 				UserDataDir = CreateProfilePath(profile),
-				Args = _browserArgs.ToArray(),
+				Args = [.. _browserArgs],
 				DefaultViewport = null
 			});
 		}

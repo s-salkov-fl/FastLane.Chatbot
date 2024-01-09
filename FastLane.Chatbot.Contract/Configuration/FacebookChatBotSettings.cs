@@ -1,10 +1,10 @@
 namespace FastLane.Chatbot.Contract.Configuration;
 
 /// <summary>
-/// General whatsapp chat bot constants
+/// General facebook chat bot constants
 /// </summary>
-public record WhatsAppChatBotSettings
+public record FacebookChatBotSettings
 {
-	public int TimeOutContactsRefreshMs { get; init; }
+	public int NewStateEventPollingPeriodMs { get; init; }
 	public int GeneralMutateFailCrutchWaitMs { get; init; }
 }

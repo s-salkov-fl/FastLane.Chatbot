@@ -1,12 +1,11 @@
 using FastLane.Chatbot.Browser;
-using FastLane.Chatbot.Browser.Configuration;
 using FastLane.Chatbot.Contract.Configuration;
-using FastLane.Chatbot.Contract.Model;
+using FastLane.Chatbot.WhatsApp.Model;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using PuppeteerSharp;
 
-namespace FastLane.Chatbot.Contract.Services;
+namespace FastLane.Chatbot.WhatsApp.Services;
 
 /// <summary>
 /// Start sequence for WhatsApp browser launch and logging into messenger
@@ -21,24 +20,16 @@ public interface IWhatsAppClientFactory
 	Task<IWhatsAppClient> CreateClientAsync(CancellationToken cancellationToken);
 }
 
-internal class WhatsAppClientFactory : IWhatsAppClientFactory
+internal class WhatsAppClientFactory(
+	IBrowserFactory browserFactory,
+	IServiceProvider serviceProvider,
+	IOptionsMonitor<Settings> settings,
+	WhatsAppClientsPool whatsAppClientsPool) : IWhatsAppClientFactory
 {
-	private readonly IBrowserFactory _browserFactory;
-	private readonly IServiceProvider _serviceProvider;
-	private readonly BrowserSettings _browserSettings;
-	private readonly WhatsAppClientsPool _whatsAppClientsPool;
-
-	public WhatsAppClientFactory(
-		IBrowserFactory browserFactory,
-		IServiceProvider serviceProvider,
-		IOptionsMonitor<Settings> settings,
-		WhatsAppClientsPool whatsAppClientsPool)
-	{
-		_browserSettings = settings.CurrentValue.Browser;
-		_browserFactory = browserFactory;
-		_serviceProvider = serviceProvider;
-		_whatsAppClientsPool = whatsAppClientsPool;
-	}
+	private readonly IBrowserFactory _browserFactory = browserFactory;
+	private readonly IServiceProvider _serviceProvider = serviceProvider;
+	private readonly BrowserSettings _browserSettings = settings.CurrentValue.Browser;
+	private readonly WhatsAppClientsPool _whatsAppClientsPool = whatsAppClientsPool;
 
 	public async Task<IWhatsAppClient> CreateClientAsync(CancellationToken cancellationToken)
 	{

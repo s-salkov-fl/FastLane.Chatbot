@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -7,11 +7,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="PuppeteerSharp" Version="13.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="6.0.1" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\FastLane.Chatbot.Contract\FastLane.Chatbot.Contract.csproj" />
+    <ProjectReference Include="..\FastLane.Chatbot.Browser\FastLane.Chatbot.Browser.csproj" />
   </ItemGroup>
 
 </Project>

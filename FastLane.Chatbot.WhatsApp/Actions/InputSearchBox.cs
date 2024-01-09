@@ -2,19 +2,14 @@ using FastLane.Chatbot.Contract.Configuration;
 using Microsoft.Extensions.Options;
 using PuppeteerSharp;
 
-namespace FastLane.Chatbot.Contract.Actions;
+namespace FastLane.Chatbot.WhatsApp.Actions;
 
 /// <summary>
 /// Action for type some search text into Search text box
 /// </summary>
-public class InputSearchBox
+public class InputSearchBox(IOptionsMonitor<Settings> settings)
 {
-	private readonly Settings _settings;
-
-	public InputSearchBox(IOptionsMonitor<Settings> settings)
-	{
-		_settings = settings.CurrentValue;
-	}
+	private readonly Settings _settings = settings.CurrentValue;
 
 	public async Task<bool> InvokeActionAsync((IBrowser browser, string text) argument, CancellationToken cancellationToken)
 	{
@@ -25,7 +20,7 @@ public class InputSearchBox
 		IPage[] pages = await browser.PagesAsync();
 		IPage page = pages.FirstOrDefault() ?? await browser.NewPageAsync();
 
-		string SearchInputXpath = _settings.PageExpressions.SearchInputXpath;
+		string SearchInputXpath = _settings.WhatsAppPageExpressions.SearchInputXpath;
 		IElementHandle searchInput = await page.WaitForSelectorAsync(SearchInputXpath);
 
 		string curValue = await searchInput.EvaluateFunctionAsync<string>("(e) => { return e.innerText; }");

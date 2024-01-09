@@ -3,18 +3,14 @@ using FastLane.Chatbot.Contract.Configuration;
 using Microsoft.Extensions.Options;
 using PuppeteerSharp;
 
-namespace FastLane.Chatbot.Contract.Actions;
+namespace FastLane.Chatbot.WhatsApp.Actions;
 
 /// <summary>
 /// Action for collect unread messages statistics
 /// </summary>
-public class GetUnreadMessagesStatistics
+public partial class GetUnreadMessagesStatistics(IOptionsMonitor<Settings> settings)
 {
-	private readonly Settings _settings;
-	public GetUnreadMessagesStatistics(IOptionsMonitor<Settings> settings)
-	{
-		_settings = settings.CurrentValue;
-	}
+	private readonly Settings _settings = settings.CurrentValue;
 
 	public async Task<IReadOnlyDictionary<string, int>> InvokeActionAsync(IBrowser argument, CancellationToken cancellationToken)
 	{
@@ -26,15 +22,15 @@ public class GetUnreadMessagesStatistics
 		IPage[] pages = await _browser.PagesAsync();
 		IPage page = pages.FirstOrDefault() ?? await _browser.NewPageAsync();
 
-		IElementHandle[] elements = await page.QuerySelectorAllAsync(_settings.PageExpressions.ContactContainer);
-		Dictionary<string, int> result = new();
+		IElementHandle[] elements = await page.QuerySelectorAllAsync(_settings.WhatsAppPageExpressions.ContactContainer);
+		Dictionary<string, int> result = [];
 
 		foreach (IElementHandle element in elements)
 		{
-			IElementHandle spanChatName = await element.QuerySelectorAsync(_settings.PageExpressions.SpanChatName);
+			IElementHandle spanChatName = await element.QuerySelectorAsync(_settings.WhatsAppPageExpressions.SpanChatName);
 			string chatName = await spanChatName.EvaluateFunctionAsync<string>("(e) => { return e.innerText; }");
 
-			IElementHandle spanUnreadNumber = await element.QuerySelectorAsync(_settings.PageExpressions.SpanUnreadNumber);
+			IElementHandle spanUnreadNumber = await element.QuerySelectorAsync(_settings.WhatsAppPageExpressions.SpanUnreadNumber);
 
 			if (spanUnreadNumber != null)
 			{
@@ -42,7 +38,7 @@ public class GetUnreadMessagesStatistics
 
 				if (theNumber != null)
 				{
-					theNumber = Regex.Replace(theNumber, "[^0-9]", "");
+					theNumber = NumRegex().Replace(theNumber, "");
 					if (!string.IsNullOrWhiteSpace(theNumber))
 					{ result[chatName] = int.Parse(theNumber); }
 				}
@@ -52,4 +48,6 @@ public class GetUnreadMessagesStatistics
 		return result;
 	}
 
+	[GeneratedRegex("[^0-9]")]
+	private static partial Regex NumRegex();
 }

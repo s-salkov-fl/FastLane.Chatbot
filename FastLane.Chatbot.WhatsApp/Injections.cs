@@ -1,8 +1,8 @@
-using FastLane.Chatbot.Contract.Model;
-using FastLane.Chatbot.Contract.Services;
+using FastLane.Chatbot.WhatsApp.Model;
+using FastLane.Chatbot.WhatsApp.Services;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace FastLane.Chatbot.Contract;
+namespace FastLane.Chatbot.WhatsApp;
 
 public static class Injections
 {
@@ -13,7 +13,7 @@ public static class Injections
 			.AddSingleton<IWhatsAppClientFactory, WhatsAppClientFactory>();
 	}
 
-	public static IServiceCollection AddChatbot(this IServiceCollection services)
+	public static IServiceCollection AddWhatsApp(this IServiceCollection services)
 	{
 		return
 			services

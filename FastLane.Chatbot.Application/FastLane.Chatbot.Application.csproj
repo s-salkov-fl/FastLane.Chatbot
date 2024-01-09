@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Worker">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>dotnet-FastLane.Chatbot.Application-401cc453-c032-4b6d-90a3-00a65d668d99</UserSecretsId>
@@ -12,7 +12,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\FastLane.Chatbot.Contract\FastLane.Chatbot.Contract.csproj" />
+    <ProjectReference Include="..\FastLane.Chatbot.Facebook\FastLane.Chatbot.Facebook.csproj" />
+    <ProjectReference Include="..\FastLane.Chatbot.WhatsApp\FastLane.Chatbot.WhatsApp.csproj" />
   </ItemGroup>
 
   <ItemGroup>

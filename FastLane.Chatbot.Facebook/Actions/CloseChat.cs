@@ -2,19 +2,14 @@ using FastLane.Chatbot.Contract.Configuration;
 using Microsoft.Extensions.Options;
 using PuppeteerSharp;
 
-namespace FastLane.Chatbot.Contract.Actions;
+namespace FastLane.Chatbot.Facebook.Actions;
 
 /// <summary>
 /// Closes currently opened chat
 /// </summary>
-public class CloseChat
+public class CloseChat(IOptionsMonitor<Settings> settings)
 {
-	private readonly Settings _settings;
-
-	public CloseChat(IOptionsMonitor<Settings> settings)
-	{
-		_settings = settings.CurrentValue;
-	}
+	private readonly Settings _settings = settings.CurrentValue;
 
 	public async Task<bool> InvokeActionAsync(IBrowser argument, CancellationToken cancellationToken)
 	{
@@ -28,8 +23,9 @@ public class CloseChat
 		IPage[] pages = await browser.PagesAsync();
 		IPage page = pages.FirstOrDefault() ?? await browser.NewPageAsync();
 
-		await page.Keyboard.PressAsync("Escape");
-		await Task.Delay(_settings.WhatsApp.GeneralMutateFailCrutchWaitMs, cancellationToken);
+		//await page.GoToAsync("https://www.facebook.com/messages", WaitUntilNavigation.DOMContentLoaded | WaitUntilNavigation.Networkidle2);
+		await page.EvaluateExpressionAsync("history.go(-(history.length-2))");
+		await Task.Delay(100, cancellationToken);
 
 		return true;
 	}

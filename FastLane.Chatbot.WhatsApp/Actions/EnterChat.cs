@@ -2,19 +2,14 @@ using FastLane.Chatbot.Contract.Configuration;
 using Microsoft.Extensions.Options;
 using PuppeteerSharp;
 
-namespace FastLane.Chatbot.Contract.Actions;
+namespace FastLane.Chatbot.WhatsApp.Actions;
 
 /// <summary>
 /// Finds chat name in chat list and clicks on it, i.e. enters exact chat
 /// </summary>
-public class EnterChat
+public class EnterChat(IOptionsMonitor<Settings> settings)
 {
-	private readonly Settings _settings;
-
-	public EnterChat(IOptionsMonitor<Settings> settings)
-	{
-		_settings = settings.CurrentValue;
-	}
+	private readonly Settings _settings = settings.CurrentValue;
 
 	public async Task<bool> InvokeActionAsync((IBrowser browser, string chatName) argument, CancellationToken cancellationToken)
 	{
@@ -27,13 +22,13 @@ public class EnterChat
 
 		TimeSpan timeout = TimeSpan.FromMilliseconds(_settings.WhatsApp.TimeOutContactsRefreshMs);
 		DateTime limit = DateTime.Now + timeout;
-		List<IElementHandle> chatNamesElements = new();
+		List<IElementHandle> chatNamesElements = [];
 
 		while (!cancellationToken.IsCancellationRequested && limit > DateTime.Now && chatNamesElements.Count == 0)
 		{
 			try
 			{
-				chatNamesElements.AddRange(await page.QuerySelectorAllAsync(_settings.PageExpressions.ContactContainer));
+				chatNamesElements.AddRange(await page.QuerySelectorAllAsync(_settings.WhatsAppPageExpressions.ContactContainer));
 			}
 			catch
 			{// Skip
@@ -48,7 +43,7 @@ public class EnterChat
 
 		foreach (IElementHandle element in chatNamesElements)
 		{
-			IElementHandle spanChatName = await element.QuerySelectorAsync(_settings.PageExpressions.SpanChatName);
+			IElementHandle spanChatName = await element.QuerySelectorAsync(_settings.WhatsAppPageExpressions.SpanChatName);
 			string curChatName = await spanChatName.EvaluateFunctionAsync<string>("(e) => { return e.innerText; }");
 
 			if (curChatName == chatName)
