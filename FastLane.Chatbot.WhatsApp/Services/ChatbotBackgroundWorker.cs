@@ -12,7 +12,7 @@ internal class ChatbotBackgroundWorker(WhatsAppClientsPool whatsAppClients) : Ba
 		{
 			foreach (IWhatsAppClient client in _whatsAppClients)
 			{
-				await client.GetChatInboxCountAsync(stoppingToken);
+				await client.PumpMessages(stoppingToken);
 			}
 			await Task.Delay(1000, stoppingToken);
 		}

@@ -13,6 +13,10 @@ namespace FastLane.Chatbot.WhatsApp.Services;
 /// </summary>
 public interface IWhatsAppClient : IChatbotClient
 {
+	/// <summary>
+	/// Method for invoking message handlers
+	/// </summary>
+	Task PumpMessages(CancellationToken cancellationToken);
 }
 
 internal class WhatsAppClient(
@@ -98,16 +102,27 @@ internal class WhatsAppClient(
 		await _semaphore.WaitAsync(cancellationToken);
 		try
 		{
+			return await new GetUnreadMessagesStatistics(_settings).InvokeActionAsync(_browser, cancellationToken);
+		}
+		finally { _semaphore.Release(); }
+	}
+
+	public async Task PumpMessages(CancellationToken cancellationToken)
+	{
+		await _semaphore.WaitAsync(cancellationToken);
+
+		try
+		{
 			IReadOnlyDictionary<string, int> newStat = await new GetUnreadMessagesStatistics(_settings).InvokeActionAsync(_browser, cancellationToken);
 
-			if (MessageReceived != null &&
-				!(newStat == _currentChatUnreadMessages || (newStat.Count == _currentChatUnreadMessages.Count && !newStat.Except(_currentChatUnreadMessages).Any()))
-				)
+			if (MessageReceived != null && newStat.Count != 0 &&
+					!(newStat == _currentChatUnreadMessages || (newStat.Count == _currentChatUnreadMessages.Count && !newStat.Except(_currentChatUnreadMessages).Any()))
+					)
 			{
 				MessageReceived?.Invoke();
 			}
 
-			return _currentChatUnreadMessages = newStat;
+			_currentChatUnreadMessages = newStat;
 		}
 		finally { _semaphore.Release(); }
 	}
