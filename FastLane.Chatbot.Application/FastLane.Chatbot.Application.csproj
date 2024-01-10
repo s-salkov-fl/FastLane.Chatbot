@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FastLane.Chatbot.Facebook\FastLane.Chatbot.Facebook.csproj" />
+    <ProjectReference Include="..\FastLane.Chatbot.TikTok\FastLane.Chatbot.TikTok.csproj" />
     <ProjectReference Include="..\FastLane.Chatbot.WhatsApp\FastLane.Chatbot.WhatsApp.csproj" />
   </ItemGroup>
 

@@ -14,9 +14,11 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.editorconfig = .editorconfig
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FastLane.Chatbot.Contract", "FastLane.Chatbot.Contract\FastLane.Chatbot.Contract.csproj", "{8D6F6625-CE5C-4138-905E-D183CE3D1C28}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FastLane.Chatbot.Contract", "FastLane.Chatbot.Contract\FastLane.Chatbot.Contract.csproj", "{8D6F6625-CE5C-4138-905E-D183CE3D1C28}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FastLane.Chatbot.Facebook", "FastLane.Chatbot.Facebook\FastLane.Chatbot.Facebook.csproj", "{46072731-2F4E-4C9F-A02C-0F0E310805F0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FastLane.Chatbot.Facebook", "FastLane.Chatbot.Facebook\FastLane.Chatbot.Facebook.csproj", "{46072731-2F4E-4C9F-A02C-0F0E310805F0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FastLane.Chatbot.TikTok", "FastLane.Chatbot.TikTok\FastLane.Chatbot.TikTok.csproj", "{1D5DB287-D751-4281-953B-A4F095E4E34D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -44,6 +46,10 @@ Global
 		{46072731-2F4E-4C9F-A02C-0F0E310805F0}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{46072731-2F4E-4C9F-A02C-0F0E310805F0}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{46072731-2F4E-4C9F-A02C-0F0E310805F0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1D5DB287-D751-4281-953B-A4F095E4E34D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1D5DB287-D751-4281-953B-A4F095E4E34D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1D5DB287-D751-4281-953B-A4F095E4E34D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1D5DB287-D751-4281-953B-A4F095E4E34D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

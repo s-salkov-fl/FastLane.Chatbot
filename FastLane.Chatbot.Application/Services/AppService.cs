@@ -1,6 +1,7 @@
 using FastLane.Chatbot.Contract.Model;
 using FastLane.Chatbot.Facebook.Services;
 using FastLane.Chatbot.WhatsApp.Services;
+using FastLane.Chatbot.TikTok.Services;
 
 namespace FastLane.Chatbot.Application.Services;
 
@@ -8,19 +9,20 @@ public class AppService(
 	ILogger<AppService> logger,
 	IWhatsAppClientFactory whatsAppClientFactory,
 	IFacebookClientFactory facebookClientFactory,
-	IServiceProvider provider) : BackgroundService
+	ITikTokClientFactory tiktokClientFactory) : BackgroundService
 {
 	private readonly ILogger<AppService> _logger = logger;
 	private readonly IWhatsAppClientFactory _whatsAppClientFactory = whatsAppClientFactory;
 	private readonly IFacebookClientFactory _facebookClientFactory = facebookClientFactory;
-	private readonly IServiceProvider _provider = provider;
+	private readonly ITikTokClientFactory _tiktokClientFactory = tiktokClientFactory;
 
 	protected override async Task ExecuteAsync(CancellationToken stoppingToken)
 	{
 		try
 		{
 			//await RunWhatsAppAsync(stoppingToken).ConfigureAwait(false);
-			await RunFacebookAsync(stoppingToken).ConfigureAwait(false);
+			//await RunFacebookAsync(stoppingToken).ConfigureAwait(false);
+			await RunTikTokAsync(stoppingToken).ConfigureAwait(false);
 		}
 		catch (OperationCanceledException)
 		{
@@ -92,6 +94,47 @@ public class AppService(
 	{
 		_logger.LogInformation("Create the Facebook client");
 		await using IFacebookClient client = await _facebookClientFactory.CreateClientAsync(stoppingToken);
+
+		client.MessageReceived += async () =>
+		{
+			_logger.LogInformation("New messages event");
+			Dictionary<string, int> unreads = (Dictionary<string, int>)await client.GetChatInboxCountAsync(stoppingToken);
+
+			string outp = "New message statistics:\n";
+			foreach (KeyValuePair<string, int> messageStat in unreads)
+			{
+				outp += $"\"{messageStat.Key}\" - {messageStat.Value} unread messages\n";
+			}
+
+			_logger.LogInformation("{Stats}", outp);
+
+			foreach (KeyValuePair<string, int> messageStat in unreads)
+			{
+				IReadOnlyList<ChatMessage> messages = await client.GetMessagesAsync(messageStat.Key, stoppingToken);
+				IEnumerable<ChatMessage> userNewMessages = messages.Where(m => m.Member == ChatMember.User).Take(messageStat.Value);
+				_logger.LogInformation("New messages of {ChatName}:\n{Messages}", messageStat.Key, string.Join("\n", userNewMessages.Select(m => m.Content)));
+
+				foreach (ChatMessage message in userNewMessages)
+				{
+					string answer = $"I do not understand this: \"{message.Content}\"";
+					await client.PostAsync(messageStat.Key, answer, stoppingToken);
+					_logger.LogInformation("Posted message to {ChatName} : {Message}", messageStat.Key, answer);
+				}
+			}
+		};
+
+		_logger.LogInformation("Monitoring new messages");
+
+		while (!stoppingToken.IsCancellationRequested)
+		{
+			await Task.Delay(1000, stoppingToken);
+		}
+	}
+
+	public async Task RunTikTokAsync(CancellationToken stoppingToken)
+	{
+		_logger.LogInformation("Create the TikTok client");
+		await using ITikTokClient client = await _tiktokClientFactory.CreateClientAsync(stoppingToken);
 
 		client.MessageReceived += async () =>
 		{
