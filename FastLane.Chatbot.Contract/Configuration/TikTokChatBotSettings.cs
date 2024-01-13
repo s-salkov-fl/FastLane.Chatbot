@@ -5,5 +5,6 @@ namespace FastLane.Chatbot.Contract.Configuration;
 /// </summary>
 public record TikTokChatBotSettings
 {
-	public int NewStateEventPollingPeriodMs { get; init; }
+	public required int NewStateEventPollingPeriodMs { get; init; }
+	public required int GeneralMutateFailCrutchWaitMs { get; init; }
 }

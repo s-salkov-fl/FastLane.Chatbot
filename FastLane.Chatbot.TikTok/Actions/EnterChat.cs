@@ -18,29 +18,36 @@ public class EnterChat(IOptionsMonitor<Settings> settings)
 		IPage[] pages = await browser.PagesAsync();
 		IPage page = pages.FirstOrDefault() ?? await browser.NewPageAsync();
 
-		//IElementHandle[] elements = await page.QuerySelectorAllAsync(_settings.TikTokPageExpressions.ContactContainer);
+		await page.WaitForSelectorAsync(_settings.TikTokPageExpressions.ContactContainer);
+		IElementHandle[] elements = await page.QuerySelectorAllAsync(_settings.TikTokPageExpressions.ContactContainer);
 
-		//foreach (IElementHandle element in elements)
-		//{
-		//	IElementHandle chatIdlink = await element.QuerySelectorAsync(_settings.FaceBookPageExpressions.ChatIdLink);
-		//	if (chatIdlink != null)
-		//	{
-		//		IElementHandle contactNameElement = await chatIdlink.QuerySelectorAsync(_settings.FaceBookPageExpressions.ContactName);
+		foreach (IElementHandle element in elements)
+		{
+			cancellationToken.ThrowIfCancellationRequested();
+			await element.WaitForSelectorAsync(_settings.TikTokPageExpressions.ContactName);
+			IElementHandle contactNameElement = await element.QuerySelectorAsync(_settings.TikTokPageExpressions.ContactName);
 
-		//		if (contactNameElement != null)
-		//		{
-		//			string currentChatName = (await contactNameElement.GetPropertyAsync("value")).RemoteObject.Value.ToString();
+			if (contactNameElement != null)
+			{
+				string? contactName = (await contactNameElement.GetPropertyAsync("innerText")).RemoteObject?.Value.ToString();
 
-		//			if (chatName == currentChatName)
-		//			{
-		//				IElementHandle contactLinkElement = await element.QuerySelectorAsync(_settings.FaceBookPageExpressions.ChatIdLink);
-		//				await contactLinkElement.ClickAsync();
-		//				await Task.Delay(_settings.Facebook.GeneralMutateFailCrutchWaitMs, cancellationToken);
-		//				return true;
-		//			}
-		//		}
-		//	}
-		//}
+				if (string.IsNullOrEmpty(contactName))
+				{
+					await Task.Delay(_settings.TikTok.GeneralMutateFailCrutchWaitMs, cancellationToken);
+					contactName = (await contactNameElement.GetPropertyAsync("innerText")).RemoteObject?.Value.ToString();
+					if (string.IsNullOrEmpty(contactName))
+					{ throw new InvalidOperationException("Unable to read contact name"); }
+				}
+
+				if (contactName == chatName)
+				{
+					cancellationToken.ThrowIfCancellationRequested();
+					await contactNameElement.ClickAsync();
+					await Task.Delay(_settings.TikTok.GeneralMutateFailCrutchWaitMs, cancellationToken);
+					return true;
+				}
+			}
+		}
 
 		return false;
 	}

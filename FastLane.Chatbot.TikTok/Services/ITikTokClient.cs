@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using FastLane.Chatbot.Contract.Configuration;
 using FastLane.Chatbot.Contract.Model;
 using FastLane.Chatbot.TikTok.Actions;
@@ -14,6 +15,11 @@ public interface ITikTokClient : IChatbotClient
 	/// Method for invoking message handlers
 	/// </summary>
 	Task PumpMessages(CancellationToken cancellationToken);
+
+	/// <summary>
+	/// Statistics from last calls of GetMessagesAsync
+	/// </summary>
+	public ConcurrentDictionary<string, IReadOnlyList<ChatMessage>> CurrentChatMessagesStats { get; }
 }
 
 public class TikTokClient(
@@ -29,6 +35,9 @@ public class TikTokClient(
 	private IReadOnlyDictionary<string, int> _currentChatUnreadMessages = new Dictionary<string, int>();
 	private readonly TikTokClientsPool _tiktokClientsPool = tiktokClientsPool;
 	private readonly SemaphoreSlim _semaphore = new(1, 1);
+	private string _botNickName;
+
+	public ConcurrentDictionary<string, IReadOnlyList<ChatMessage>> CurrentChatMessagesStats { get; } = [];
 
 	public event Action? MessageReceived;
 
@@ -76,6 +85,8 @@ public class TikTokClient(
 
 			cancellationToken.ThrowIfCancellationRequested();
 			_logger.LogInformation("Entered TikTok");
+
+			_botNickName = await new GetBotNickName(_settings).InvokeActionAsync(_browser, cancellationToken);
 		}
 		catch (OperationCanceledException)
 		{
@@ -120,7 +131,7 @@ public class TikTokClient(
 		await _semaphore.WaitAsync(cancellationToken);
 		try
 		{
-			return await new GetUnreadMessagesStatistics(_settings).InvokeActionAsync(_browser, cancellationToken);
+			return await new GetUnreadMessagesStatistics(_settings).InvokeActionAsync(_browser, _botNickName, CurrentChatMessagesStats, cancellationToken);
 		}
 		catch (Exception ex)
 		{
@@ -141,7 +152,8 @@ public class TikTokClient(
 
 		try
 		{
-			IReadOnlyDictionary<string, int> newStat = await new GetUnreadMessagesStatistics(_settings).InvokeActionAsync(_browser, cancellationToken);
+			IReadOnlyDictionary<string, int> newStat = await new GetUnreadMessagesStatistics(_settings).InvokeActionAsync
+				(_browser, _botNickName, CurrentChatMessagesStats, cancellationToken);
 
 			if (MessageReceived != null && newStat.Count != 0 &&
 					!(newStat == _currentChatUnreadMessages || (newStat.Count == _currentChatUnreadMessages.Count && !newStat.Except(_currentChatUnreadMessages).Any()))
@@ -171,10 +183,12 @@ public class TikTokClient(
 			if (!await EnterChatAsync(chat, cancellationToken))
 			{ throw new InvalidOperationException("Unabled to enter chat " + chat); }
 
-			IReadOnlyList<ChatMessage> result = await new GetLastMessages(_settings).InvokeActionAsync(_browser, ChatMember.Bot | ChatMember.User, cancellationToken);
+			IReadOnlyList<ChatMessage> result = await new GetLastMessages(_settings).InvokeActionAsync(_browser, _botNickName, ChatMember.Bot | ChatMember.User, cancellationToken);
 
-			//return result;
-			return !await CloseChatAsync(cancellationToken) ? throw new InvalidOperationException("Unabled to close active chat ") : result;
+			CurrentChatMessagesStats[chat] = result;
+
+			return result;
+			//return !await CloseChatAsync(cancellationToken) ? throw new InvalidOperationException("Unabled to close active chat ") : result;
 		}
 		catch (Exception ex)
 		{
@@ -197,7 +211,6 @@ public class TikTokClient(
 		{
 			await EnterChatAsync(chat, cancellationToken);
 			await new PostMessage(_settings).InvokeActionAsync(_browser, content, cancellationToken);
-			await CloseChatAsync(cancellationToken);
 		}
 		finally { _semaphore.Release(); }
 	}
@@ -213,7 +226,7 @@ public class TikTokClient(
 	}
 
 	/// <summary>
-	/// Closes currently active chat
+	/// Closes currently active chat. Reloads window!
 	/// </summary>
 	/// <param name="cancellationToken"></param>
 	public async Task<bool> CloseChatAsync(CancellationToken cancellationToken)

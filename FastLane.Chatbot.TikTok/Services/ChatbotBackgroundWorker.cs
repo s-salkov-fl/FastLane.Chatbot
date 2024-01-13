@@ -21,7 +21,7 @@ internal class ChatbotBackgroundWorker(TikTokClientsPool tiktokClients,
 			{
 				await client.PumpMessages(stoppingToken);
 			}
-			await Task.Delay(_settings.Facebook.NewStateEventPollingPeriodMs, stoppingToken);
+			await Task.Delay(_settings.TikTok.NewStateEventPollingPeriodMs, stoppingToken);
 		}
 
 		return;

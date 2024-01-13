@@ -21,6 +21,8 @@ public class PostMessage(IOptionsMonitor<Settings> settings)
 
 		IElementHandle input = await page.WaitForSelectorAsync(_settings.TikTokPageExpressions.ChatInput);
 
+		await input.ClickAsync();
+		await Task.Delay(500, cancellationToken);
 		await input.TypeAsync(messageText, new TypeOptions { Delay = 10 });
 
 		await page.Keyboard.PressAsync(Key.Enter);

@@ -164,6 +164,13 @@ public class AppService(
 			}
 		};
 
+		////sample get some chat correspondence
+		//string chatNameInit = "samir_and_aly";
+		//IReadOnlyList<ChatMessage> lastMessages = await client.GetMessagesAsync(chatNameInit, stoppingToken);
+
+		//_logger.LogInformation("Last {Count} messages of {ChatName}:\n{Messages}", lastMessages.Count, chatNameInit, string.Join("\n"
+		//	, lastMessages.Select(m => m.Member.ToString() + ":" + m.Content)));
+
 		_logger.LogInformation("Monitoring new messages");
 
 		while (!stoppingToken.IsCancellationRequested)
