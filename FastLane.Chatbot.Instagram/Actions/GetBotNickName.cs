@@ -2,7 +2,7 @@ using FastLane.Chatbot.Contract.Configuration;
 using Microsoft.Extensions.Options;
 using PuppeteerSharp;
 
-namespace FastLane.Chatbot.TikTok.Actions;
+namespace FastLane.Chatbot.Instagram.Actions;
 
 /// <summary>
 /// Action for get BotNick name from chat page markup
@@ -20,22 +20,22 @@ public partial class GetBotNickName(IOptionsMonitor<Settings> settings)
 		IPage[] pages = await browser.PagesAsync();
 		IPage page = pages.FirstOrDefault() ?? await browser.NewPageAsync();
 
-		IElementHandle botNickNameElement = await page.QuerySelectorAsync(_settings.TikTokPageExpressions.BotNickName);
+		IElementHandle botNickNameElement = await page.QuerySelectorAsync(_settings.InstagramPageExpressions.BotNickName);
 		if (botNickNameElement != null)
 		{
-			string content = (await botNickNameElement.GetPropertyAsync("innerText")).RemoteObject.Value.ToString();
+			//string content = (await botNickNameElement.GetPropertyAsync("innerText")).RemoteObject.Value.ToString();
 
-			int ixBegin = content.IndexOf("\"nickName\":", StringComparison.OrdinalIgnoreCase);
+			//int ixBegin = content.IndexOf("\"nickName\":", StringComparison.OrdinalIgnoreCase);
 
-			if (ixBegin != -1)
-			{
-				int ixStartNick = content.IndexOf(":\"", ixBegin, StringComparison.OrdinalIgnoreCase);
-				int ixEndComma = content.IndexOf(",", ixStartNick, StringComparison.OrdinalIgnoreCase);
+			//if (ixBegin != -1)
+			//{
+			//	int ixStartNick = content.IndexOf(":\"", ixBegin, StringComparison.OrdinalIgnoreCase);
+			//	int ixEndComma = content.IndexOf(",", ixStartNick, StringComparison.OrdinalIgnoreCase);
 
-				string nickname = content[(ixStartNick + 1)..ixEndComma].Replace("\"", "");
+			//	string nickname = content[(ixStartNick + 1)..ixEndComma].Replace("\"", "");
 
-				return nickname;
-			}
+			//	return nickname;
+			//}
 		}
 
 		throw new InvalidOperationException("Unable to obtain NickName of bot from page.");
