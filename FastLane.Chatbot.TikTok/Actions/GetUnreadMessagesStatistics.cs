@@ -85,6 +85,7 @@ public partial class GetUnreadMessagesStatistics(IOptionsMonitor<Settings> setti
 				IEnumerable<string> oldCurChatMessages = oldMessages.Where(m => m.Member == ChatMember.User).Select(m => m.Content);
 
 				string? lastOldMessage = oldCurChatMessages.FirstOrDefault();
+				int countSameOld = oldCurChatMessages.TakeWhile(m => m == lastOldMessage).Count();
 
 				if (lastOldMessage != null)
 				{
@@ -92,6 +93,12 @@ public partial class GetUnreadMessagesStatistics(IOptionsMonitor<Settings> setti
 					if (countNew > 0)
 					{
 						result[currentOpenedChatName] = countNew;
+					}
+					else
+					{
+						int countNewDups = NewMessagesStats.TakeWhile(s => s == lastOldMessage).Count();
+						if (countNewDups > countSameOld)
+						{ result[currentOpenedChatName] = countNewDups - countSameOld; }
 					}
 				}
 			}
