@@ -15,6 +15,7 @@
     <ProjectReference Include="..\FastLane.Chatbot.Facebook\FastLane.Chatbot.Facebook.csproj" />
     <ProjectReference Include="..\FastLane.Chatbot.Instagram\FastLane.Chatbot.Instagram.csproj" />
     <ProjectReference Include="..\FastLane.Chatbot.TikTok\FastLane.Chatbot.TikTok.csproj" />
+    <ProjectReference Include="..\FastLane.Chatbot.TwitterX\FastLane.Chatbot.TwitterX.csproj" />
     <ProjectReference Include="..\FastLane.Chatbot.WhatsApp\FastLane.Chatbot.WhatsApp.csproj" />
   </ItemGroup>
 

@@ -1,6 +1,5 @@
 using System.Text.RegularExpressions;
 using FastLane.Chatbot.Contract.Configuration;
-using FastLane.Chatbot.Contract.Model;
 using Microsoft.Extensions.Options;
 using PuppeteerSharp;
 

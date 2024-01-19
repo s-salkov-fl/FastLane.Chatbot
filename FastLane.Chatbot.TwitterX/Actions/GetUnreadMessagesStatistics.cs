@@ -5,7 +5,7 @@ using FastLane.Chatbot.Contract.Utility;
 using Microsoft.Extensions.Options;
 using PuppeteerSharp;
 
-namespace FastLane.Chatbot.Instagram.Actions;
+namespace FastLane.Chatbot.TwitterX.Actions;
 
 /// <summary>
 /// Action for collect unread messages statistics
@@ -26,8 +26,8 @@ public partial class GetUnreadMessagesStatistics(IOptionsMonitor<Settings> setti
 		IPage[] pages = await browser.PagesAsync();
 		IPage page = pages.FirstOrDefault() ?? await browser.NewPageAsync();
 
-		IElementHandle chatContainer = await page.WaitForSelectorAsync(_settings.InstagramPageExpressions.ChatContainer);
-		IElementHandle[] elements = await chatContainer.QuerySelectorAllAsync(_settings.InstagramPageExpressions.ContactContainer);
+		IElementHandle chatContainer = await page.WaitForSelectorAsync(_settings.TwitterXPageExpressions.ChatContainer);
+		IElementHandle[] elements = await chatContainer.QuerySelectorAllAsync(_settings.TwitterXPageExpressions.ContactContainer);
 		Dictionary<string, int> result = [];
 
 		//File.WriteAllText("C:\\temp\\page.txt", await page.GetContentAsync());
@@ -36,11 +36,11 @@ public partial class GetUnreadMessagesStatistics(IOptionsMonitor<Settings> setti
 
 		foreach (IElementHandle element in elements)
 		{
-			IElementHandle messagesExist = await element.QuerySelectorAsync(_settings.InstagramPageExpressions.MessageExistSign);
+			IElementHandle messagesExist = await element.QuerySelectorAsync(_settings.TwitterXPageExpressions.MessageExistSign);
 
 			if (messagesExist != null)
 			{
-				IElementHandle contactNameElement = await element.QuerySelectorAsync(_settings.InstagramPageExpressions.ContactName);
+				IElementHandle contactNameElement = await element.QuerySelectorAsync(_settings.TwitterXPageExpressions.ContactName);
 
 				if (contactNameElement != null)
 				{
