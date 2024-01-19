@@ -1,6 +1,8 @@
+using System;
 using System.Collections.Concurrent;
 using FastLane.Chatbot.Contract.Configuration;
 using FastLane.Chatbot.Contract.Model;
+using FastLane.Chatbot.Contract.Utility;
 using Microsoft.Extensions.Options;
 using PuppeteerSharp;
 
@@ -15,7 +17,6 @@ public partial class GetUnreadMessagesStatistics(IOptionsMonitor<Settings> setti
 	private readonly IOptionsMonitor<Settings> _settingsMonitor = settings;
 
 	public async Task<IReadOnlyDictionary<string, int>> InvokeActionAsync(IBrowser browser,
-		string botNickName,
 		ConcurrentDictionary<string, IReadOnlyList<ChatMessage>> currentChatMessagesStats,
 		CancellationToken cancellationToken)
 	{
@@ -26,88 +27,38 @@ public partial class GetUnreadMessagesStatistics(IOptionsMonitor<Settings> setti
 		IPage[] pages = await browser.PagesAsync();
 		IPage page = pages.FirstOrDefault() ?? await browser.NewPageAsync();
 
-		IElementHandle[] elements = await page.QuerySelectorAllAsync(_settings.InstagramPageExpressions.ContactContainer);
+		IElementHandle chatContainer = await page.WaitForSelectorAsync(_settings.InstagramPageExpressions.ChatContainer);
+		IElementHandle[] elements = await chatContainer.QuerySelectorAllAsync(_settings.InstagramPageExpressions.ContactContainer);
 		Dictionary<string, int> result = [];
 
-		//foreach (IElementHandle element in elements)
-		//{
-		//	IElementHandle messagesExist = await element.QuerySelectorAsync(_settings.InstagramPageExpressions.MessageExistSign);
+		//File.WriteAllText("C:\\temp\\page.txt", await page.GetContentAsync());
+		//Browser.Utility.DebugBrowser.GetHtml([chatContainer], null, "C:\\temp\\chat.txt");
+		//Browser.Utility.DebugBrowser.GetHtml(elements, null, "C:\\temp\\contacts.txt");
 
-		//	if (messagesExist != null)
-		//	{
-		//		IElementHandle contactNameElement = await element.QuerySelectorAsync(_settings.InstagramPageExpressions.ContactName);
+		foreach (IElementHandle element in elements)
+		{
+			IElementHandle messagesExist = await element.QuerySelectorAsync(_settings.InstagramPageExpressions.MessageExistSign);
 
-		//		if (contactNameElement != null)
-		//		{
-		//			string? contactName = (await contactNameElement.GetPropertyAsync("innerText")).RemoteObject?.Value.ToString();
+			if (messagesExist != null)
+			{
+				IElementHandle contactNameElement = await element.QuerySelectorAsync(_settings.InstagramPageExpressions.ContactName);
 
-		//			if (string.IsNullOrEmpty(contactName))
-		//			{ throw new InvalidOperationException("Unable to read contact name"); }
+				if (contactNameElement != null)
+				{
+					string? contactName = (await contactNameElement.GetPropertyAsync("innerText")).RemoteObject?.Value.ToString();
 
-		//			IElementHandle messageCountElement = await element.QuerySelectorAsync(_settings.InstagramPageExpressions.UnreadMessagesCount)
-		//				?? throw new InvalidOperationException("Unable to find message count html element");
+					if (string.IsNullOrEmpty(contactName))
+					{ throw new InvalidOperationException("Unable to read contact name"); }
 
-		//			string countMessage = (await messageCountElement.GetPropertyAsync("innerText")).RemoteObject.Value.ToString();
+					contactName = contactName.NormalizeSpaces();
 
-		//			if (string.IsNullOrEmpty(countMessage))
-		//			{ throw new InvalidOperationException("Unable to read messages count"); }
+					result[contactName] = 1;
+				}
+				else
+				{ throw new InvalidOperationException("Unable to obtain contact name html element"); }
+			}
 
-		//			int messageCount;
-		//			if (countMessage.StartsWith("sent ", StringComparison.OrdinalIgnoreCase))
-		//			{
-		//				string countNum = countMessage.Replace("sent ", "", StringComparison.OrdinalIgnoreCase)
-		//					.Replace(" messages", "", StringComparison.OrdinalIgnoreCase)
-		//					.Replace(" message", "", StringComparison.OrdinalIgnoreCase);
-
-		//				messageCount = int.Parse(countNum);
-		//			}
-		//			else
-		//			{ messageCount = 1; }
-
-		//			result[contactName] = messageCount;
-		//		}
-		//		else
-		//		{ throw new InvalidOperationException("Unable to obtain contact name html element"); }
-		//	}
-
-		//}
-
-		//string currentOpenedChatName = await new GetOpenedChatName(_settingsMonitor).InvokeActionAsync(browser, cancellationToken);
-		//bool hasOpenedChat = !string.IsNullOrEmpty(currentOpenedChatName);
-
-		//if (hasOpenedChat)
-		//{
-		//	IEnumerable<string> NewMessagesStats = (await new GetLastMessages(_settingsMonitor)
-		//		.InvokeActionAsync(browser, botNickName, ChatMember.User, cancellationToken)).Select(m => m.Content);
-
-		//	if (currentChatMessagesStats.TryGetValue(currentOpenedChatName, out IReadOnlyList<ChatMessage>? oldMessages))
-		//	{
-		//		IEnumerable<string> oldCurChatMessages = oldMessages.Where(m => m.Member == ChatMember.User).Select(m => m.Content);
-
-		//		string? lastOldMessage = oldCurChatMessages.FirstOrDefault();
-		//		int countSameOld = oldCurChatMessages.TakeWhile(m => m == lastOldMessage).Count();
-
-		//		if (lastOldMessage != null)
-		//		{
-		//			int countNew = NewMessagesStats.TakeWhile(s => s != lastOldMessage).Count();
-		//			if (countNew > 0)
-		//			{
-		//				result[currentOpenedChatName] = countNew;
-		//			}
-		//			else
-		//			{
-		//				int countNewDups = NewMessagesStats.TakeWhile(s => s == lastOldMessage).Count();
-		//				if (countNewDups > countSameOld)
-		//				{ result[currentOpenedChatName] = countNewDups - countSameOld; }
-		//			}
-		//		}
-		//	}
-		//	else
-		//	{
-		//		result[currentOpenedChatName] = NewMessagesStats.Count();
-		//	}
-
-		//}
+		}
 
 		return result;
 	}

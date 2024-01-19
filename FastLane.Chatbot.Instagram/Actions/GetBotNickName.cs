@@ -1,4 +1,5 @@
 using FastLane.Chatbot.Contract.Configuration;
+using FastLane.Chatbot.Contract.Utility;
 using Microsoft.Extensions.Options;
 using PuppeteerSharp;
 
@@ -23,19 +24,9 @@ public partial class GetBotNickName(IOptionsMonitor<Settings> settings)
 		IElementHandle botNickNameElement = await page.QuerySelectorAsync(_settings.InstagramPageExpressions.BotNickName);
 		if (botNickNameElement != null)
 		{
-			//string content = (await botNickNameElement.GetPropertyAsync("innerText")).RemoteObject.Value.ToString();
+			string nickName = (await botNickNameElement.GetPropertyAsync("innerText")).RemoteObject.Value.ToString();
 
-			//int ixBegin = content.IndexOf("\"nickName\":", StringComparison.OrdinalIgnoreCase);
-
-			//if (ixBegin != -1)
-			//{
-			//	int ixStartNick = content.IndexOf(":\"", ixBegin, StringComparison.OrdinalIgnoreCase);
-			//	int ixEndComma = content.IndexOf(",", ixStartNick, StringComparison.OrdinalIgnoreCase);
-
-			//	string nickname = content[(ixStartNick + 1)..ixEndComma].Replace("\"", "");
-
-			//	return nickname;
-			//}
+			return nickName.NormalizeSpaces();
 		}
 
 		throw new InvalidOperationException("Unable to obtain NickName of bot from page.");

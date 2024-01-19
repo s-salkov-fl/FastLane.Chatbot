@@ -10,10 +10,13 @@ public record InstagramPageExpressionsSettings
 	public required string ContactName { get; init; }
 	public required string MessageExistSign { get; init; }
 	public required string ChatInput { get; init; }
+	public required string ChatMessageContainer { get; init; }
 	public required string BotNickName { get; init; }
-	//public required string OpenedChatHeaderNickName { get; init; }
-	//public required string ChatMessageContainerExactUserPattern { get; init; }
-	//public required string ChatMessageContainerCommon { get; init; }
-	//public required string ChatMessageUserName { get; init; }
-	//public required string UnreadMessagesCount { get; init; }
+	public required string ChatMemberNameText { get; init; }
+	public required string ChatMemberNameTextAlternate { get; init; }
+	public required string ChatMemberNick { get; init; }
+	public required string ChatMessageText { get; init; }
+	public required string ChatMessageTextAlternate { get; init; }
+	public required string ChatMessageTextAlternate2 { get; init; }
+	public required string ChatMessageTextAlternate3 { get; init; }
 }

@@ -24,9 +24,10 @@ public class AppService(
 	{
 		try
 		{
-			//await RunWhatsAppAsync(stoppingToken).ConfigureAwait(false);
-			//await RunFacebookAsync(stoppingToken).ConfigureAwait(false);
-			//await RunTikTokAsync(stoppingToken).ConfigureAwait(false);
+			//await RunWhatsAppAsync(stoppingToken);
+			//await RunFacebookAsync(stoppingToken);
+			//await RunTikTokAsync(stoppingToken);
+			await RunInstagramAsync(stoppingToken);
 		}
 		catch (OperationCanceledException)
 		{
@@ -78,13 +79,6 @@ public class AppService(
 
 			oldUnreads = unreads;
 		};
-
-		//sample get some chat correspondence
-		//string chatNameInit = "Prokhor";
-		//IReadOnlyList<ChatMessage> lastMessages = await client.GetMessagesAsync(chatNameInit, stoppingToken);
-
-		//_logger.LogInformation("Last {Count} messages of {ChatName}:\n{Messages}", lastMessages.Count, chatNameInit, string.Join("\n"
-		//	, lastMessages.Select(m => m.Member.ToString() + ":" + m.Content)));
 
 		_logger.LogInformation("Monitoring new messages");
 
@@ -168,13 +162,6 @@ public class AppService(
 			}
 		};
 
-		////sample get some chat correspondence
-		//string chatNameInit = "samir_and_aly";
-		//IReadOnlyList<ChatMessage> lastMessages = await client.GetMessagesAsync(chatNameInit, stoppingToken);
-
-		//_logger.LogInformation("Last {Count} messages of {ChatName}:\n{Messages}", lastMessages.Count, chatNameInit, string.Join("\n"
-		//	, lastMessages.Select(m => m.Member.ToString() + ":" + m.Content)));
-
 		_logger.LogInformation("Monitoring new messages");
 
 		while (!stoppingToken.IsCancellationRequested)
@@ -201,27 +188,26 @@ public class AppService(
 
 			_logger.LogInformation("{Stats}", outp);
 
-			//foreach (KeyValuePair<string, int> messageStat in unreads)
-			//{
-			//	IReadOnlyList<ChatMessage> messages = await client.GetMessagesAsync(messageStat.Key, stoppingToken);
-			//	IEnumerable<ChatMessage> userNewMessages = messages.Where(m => m.Member == ChatMember.User).Take(messageStat.Value);
-			//	_logger.LogInformation("New messages of {ChatName}:\n{Messages}", messageStat.Key, string.Join("\n", userNewMessages.Select(m => m.Content)));
+			foreach (KeyValuePair<string, int> messageStat in unreads)
+			{
+				IReadOnlyList<ChatMessage> messages = await client.GetMessagesAsync(messageStat.Key, stoppingToken);
+				IEnumerable<ChatMessage> userNewMessages = messages.Where(m => m.Member == ChatMember.User).Take(messageStat.Value);
+				_logger.LogInformation("New messages of {ChatName}:\n{Messages}", messageStat.Key, string.Join("\n", userNewMessages.Select(m => m.Content)));
 
-			//	foreach (ChatMessage message in userNewMessages)
-			//	{
-			//		string answer = $"I do not understand this: \"{message.Content}\"";
-			//		await client.PostAsync(messageStat.Key, answer, stoppingToken);
-			//		_logger.LogInformation("Posted message to {ChatName} : {Message}", messageStat.Key, answer);
-			//	}
-			//}
+				foreach (ChatMessage message in userNewMessages)
+				{
+					string answer = $"I do not understand this: \"{message.Content}\"";
+					await client.PostAsync(messageStat.Key, answer, stoppingToken);
+					_logger.LogInformation("Posted message to {ChatName} : {Message}", messageStat.Key, answer);
+				}
+			}
 		};
 
-		////sample get some chat correspondence
-		//string chatNameInit = "samir_and_aly";
-		//IReadOnlyList<ChatMessage> lastMessages = await client.GetMessagesAsync(chatNameInit, stoppingToken);
-
-		//_logger.LogInformation("Last {Count} messages of {ChatName}:\n{Messages}", lastMessages.Count, chatNameInit, string.Join("\n"
-		//	, lastMessages.Select(m => m.Member.ToString() + ":" + m.Content)));
+		//IReadOnlyList<ChatMessage> messages = await client.GetMessagesAsync("Li", stoppingToken);
+		//foreach (ChatMessage message in messages)
+		//{
+		//	_logger.LogInformation("{Message}", $"Message from {((message.Member == ChatMember.Bot) ? "BOT" : "USER")} - {message.Content}");
+		//}
 
 		_logger.LogInformation("Monitoring new messages");
 

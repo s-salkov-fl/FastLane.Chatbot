@@ -84,9 +84,9 @@ public class InstagramClient(
 			}
 
 			cancellationToken.ThrowIfCancellationRequested();
-			_logger.LogInformation("Entered Instagram");
-
 			_botNickName = await new GetBotNickName(_settings).InvokeActionAsync(_browser, cancellationToken);
+
+			_logger.LogInformation("Entered Instagram");
 		}
 		catch (OperationCanceledException)
 		{
@@ -102,10 +102,8 @@ public class InstagramClient(
 		{
 			try
 			{
-				string chatContainer = _settings.CurrentValue.InstagramPageExpressions.ChatContainer;
-
 				cancellationToken.ThrowIfCancellationRequested();
-				if (await page.WaitForSelectorAsync(chatContainer) is not null)
+				if (await page.WaitForSelectorAsync(_settings.CurrentValue.InstagramPageExpressions.ChatContainer) is not null)
 				{
 					return true;
 				}
@@ -131,7 +129,7 @@ public class InstagramClient(
 		await _semaphore.WaitAsync(cancellationToken);
 		try
 		{
-			return await new GetUnreadMessagesStatistics(_settings).InvokeActionAsync(_browser, _botNickName, CurrentChatMessagesStats, cancellationToken);
+			return await new GetUnreadMessagesStatistics(_settings).InvokeActionAsync(_browser, CurrentChatMessagesStats, cancellationToken);
 		}
 		catch (Exception ex)
 		{
@@ -153,7 +151,7 @@ public class InstagramClient(
 		try
 		{
 			IReadOnlyDictionary<string, int> newStat = await new GetUnreadMessagesStatistics(_settings).InvokeActionAsync
-				(_browser, _botNickName, CurrentChatMessagesStats, cancellationToken);
+				(_browser, CurrentChatMessagesStats, cancellationToken);
 
 			if (MessageReceived != null && newStat.Count != 0 &&
 					!(newStat == _currentChatUnreadMessages || (newStat.Count == _currentChatUnreadMessages.Count && !newStat.Except(_currentChatUnreadMessages).Any()))
@@ -175,23 +173,25 @@ public class InstagramClient(
 		finally { _semaphore.Release(); }
 	}
 
-	public async Task<IReadOnlyList<ChatMessage>> GetMessagesAsync(string chat, CancellationToken cancellationToken)
+	public async Task<IReadOnlyList<ChatMessage>> GetMessagesAsync(string userId, CancellationToken cancellationToken)
 	{
 		await _semaphore.WaitAsync(cancellationToken);
 		try
 		{
-			if (!await EnterChatAsync(chat, cancellationToken))
-			{ throw new InvalidOperationException("Unabled to enter chat " + chat); }
+			if (!await EnterChatAsync(userId, cancellationToken))
+			{ throw new InvalidOperationException("Unabled to enter chat " + userId); }
 
-			IReadOnlyList<ChatMessage> result = await new GetLastMessages(_settings).InvokeActionAsync(_browser, _botNickName, ChatMember.Bot | ChatMember.User, cancellationToken);
+			IReadOnlyList<ChatMessage> result = await new GetLastMessages(_settings).InvokeActionAsync(_browser, _botNickName, _logger, ChatMember.Bot | ChatMember.User, cancellationToken);
 
-			CurrentChatMessagesStats[chat] = result;
+			CurrentChatMessagesStats[userId] = result;
 
-			return result;
-			//return !await CloseChatAsync(cancellationToken) ? throw new InvalidOperationException("Unabled to close active chat ") : result;
+			return !await CloseChatAsync(cancellationToken) ? throw new InvalidOperationException("Unabled to close active chat ") : result;
 		}
 		catch (Exception ex)
 		{
+			try
+			{ await CloseChatAsync(cancellationToken); }
+			catch { };
 #if DEBUG
 			_logger.LogError(ex, "Chatbot error");
 #else
@@ -204,12 +204,12 @@ public class InstagramClient(
 		return new List<ChatMessage>();
 	}
 
-	public async Task PostAsync(string chat, string content, CancellationToken cancellationToken)
+	public async Task PostAsync(string userId, string content, CancellationToken cancellationToken)
 	{
 		await _semaphore.WaitAsync(cancellationToken);
 		try
 		{
-			await EnterChatAsync(chat, cancellationToken);
+			await EnterChatAsync(userId, cancellationToken);
 			await new PostMessage(_settings).InvokeActionAsync(_browser, content, cancellationToken);
 		}
 		finally { _semaphore.Release(); }

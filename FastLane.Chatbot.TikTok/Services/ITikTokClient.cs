@@ -175,17 +175,17 @@ public class TikTokClient(
 		finally { _semaphore.Release(); }
 	}
 
-	public async Task<IReadOnlyList<ChatMessage>> GetMessagesAsync(string chat, CancellationToken cancellationToken)
+	public async Task<IReadOnlyList<ChatMessage>> GetMessagesAsync(string userId, CancellationToken cancellationToken)
 	{
 		await _semaphore.WaitAsync(cancellationToken);
 		try
 		{
-			if (!await EnterChatAsync(chat, cancellationToken))
-			{ throw new InvalidOperationException("Unabled to enter chat " + chat); }
+			if (!await EnterChatAsync(userId, cancellationToken))
+			{ throw new InvalidOperationException("Unabled to enter chat " + userId); }
 
 			IReadOnlyList<ChatMessage> result = await new GetLastMessages(_settings).InvokeActionAsync(_browser, _botNickName, ChatMember.Bot | ChatMember.User, cancellationToken);
 
-			CurrentChatMessagesStats[chat] = result;
+			CurrentChatMessagesStats[userId] = result;
 
 			return result;
 			//return !await CloseChatAsync(cancellationToken) ? throw new InvalidOperationException("Unabled to close active chat ") : result;
@@ -204,12 +204,12 @@ public class TikTokClient(
 		return new List<ChatMessage>();
 	}
 
-	public async Task PostAsync(string chat, string content, CancellationToken cancellationToken)
+	public async Task PostAsync(string userId, string content, CancellationToken cancellationToken)
 	{
 		await _semaphore.WaitAsync(cancellationToken);
 		try
 		{
-			await EnterChatAsync(chat, cancellationToken);
+			await EnterChatAsync(userId, cancellationToken);
 			await new PostMessage(_settings).InvokeActionAsync(_browser, content, cancellationToken);
 		}
 		finally { _semaphore.Release(); }
