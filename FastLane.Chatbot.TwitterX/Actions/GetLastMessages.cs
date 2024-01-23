@@ -64,7 +64,7 @@ try { getMessages(); } catch(e) { throw new Error(`Error executing javaScript fo
 
 		int messNum = 0;
 
-		foreach (JToken curResult in result)
+		foreach (JToken curResult in result.Reverse())
 		{
 			messNum++;
 			int? messageType = ((curResult?.First as IConvertible)?.ToInt32(null))
