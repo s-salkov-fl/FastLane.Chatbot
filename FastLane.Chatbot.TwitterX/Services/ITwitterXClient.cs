@@ -76,13 +76,16 @@ public class TwitterXClient(
 		{
 			IPage page = await GetPageAsync();
 			await page.GoToAsync("https://twitter.com/messages", WaitUntilNavigation.Networkidle2);
+			//await page.Keyboard.DownAsync(PuppeteerSharp.Input.Key.Shift);
+			//await page.Keyboard.PressAsync(PuppeteerSharp.Input.Key.F5);
+			//await page.Keyboard.UpAsync(PuppeteerSharp.Input.Key.Shift);
+			// TODO: Track error of invalid caches(when some times twitter does not load contacts) and may be add Pressing Shift+F5 or smth to ignore caches
 
 			_logger.LogInformation("Wait for enter TwitterX");
 			while (!cancellationToken.IsCancellationRequested && !await IsChatsReadyAsync(cancellationToken))
 			{
 				await Task.Delay(1000, cancellationToken);
 			}
-
 			cancellationToken.ThrowIfCancellationRequested();
 			_botNickName = await new GetBotNickName(_settings).InvokeActionAsync(_browser, cancellationToken);
 

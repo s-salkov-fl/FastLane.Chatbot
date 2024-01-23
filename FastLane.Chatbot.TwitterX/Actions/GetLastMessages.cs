@@ -3,6 +3,7 @@ using FastLane.Chatbot.Contract.Model;
 using FastLane.Chatbot.Contract.Utility;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json.Linq;
 using PuppeteerSharp;
 
 namespace FastLane.Chatbot.TwitterX.Actions;
@@ -14,6 +15,37 @@ public partial class GetLastMessages(IOptionsMonitor<Settings> settings)
 {
 	private readonly Settings _settings = settings.CurrentValue;
 
+	private const string _messagesGetScript = @"
+function getListOfElementsByXPath(xpath) {
+    var result = document.evaluate(xpath, document, null, XPathResult.ORDERED_NODE_ITERATOR_TYPE, null);
+    return result;
+}
+
+function getMessages() {
+var clearMessCont = getListOfElementsByXPath(`//section[@aria-label='Section details' and @role='region']//div[@data-testid='cellInnerDiv']/../div`).iterateNext();
+
+var clearMessRect = clearMessCont.getBoundingClientRect();
+var contLeftX = clearMessRect.left;
+var contRightX = clearMessRect.right;
+var result = [];
+
+var messCont = getListOfElementsByXPath(`//section[@aria-label='Section details' and @role='region']//div[@data-testid='cellInnerDiv']//div[@data-testid='messageEntry']//div[@role='presentation']`);
+
+var currentMessageElement;
+
+while (currentMessageElement = messCont.iterateNext())
+{
+ var currentRect = currentMessageElement.getBoundingClientRect();
+ var currentMessage = (currentMessageElement.innerText) ? currentMessageElement.innerText : '';
+
+ result.push([ (currentRect.left == contLeftX) ? 2 : 1, currentMessage]);
+}
+
+return result;
+}
+
+try { getMessages(); } catch(e) { throw new Error(`Error executing javaScript for getting messages for chat: ` + e); }";
+
 	public async Task<IReadOnlyList<ChatMessage>> InvokeActionAsync(IBrowser browser, string botNickName, ILogger logger, ChatMember memberFilter, CancellationToken cancellationToken)
 	{
 		cancellationToken.ThrowIfCancellationRequested();
@@ -22,44 +54,24 @@ public partial class GetLastMessages(IOptionsMonitor<Settings> settings)
 		IPage[] pages = await browser.PagesAsync();
 		IPage page = pages.FirstOrDefault() ?? await browser.NewPageAsync();
 
-		await page.WaitForSelectorAsync(_settings.TwitterXPageExpressions.ChatMessageContainer);
-		IElementHandle[] elements = await page.QuerySelectorAllAsync(_settings.TwitterXPageExpressions.ChatMessageContainer);
+		//File.WriteAllText("C:\\temp\\page.txt", await page.GetContentAsync());
+
+		await page.WaitForSelectorAsync(_settings.TwitterXPageExpressions.ChatMessagesContainer);
+
+		JToken result = await page.EvaluateExpressionAsync(_messagesGetScript);
 
 		List<ChatMessage> messages = [];
-		//DebugBrowser.GetHtml(elements.Reverse(), null, "C:\\temp\\messages.txt");
 
-		for (int i = elements.Length; i > 0; i--)
+		int messNum = 0;
+
+		foreach (JToken curResult in result)
 		{
-			cancellationToken.ThrowIfCancellationRequested();
+			messNum++;
+			int? messageType = ((curResult?.First as IConvertible)?.ToInt32(null))
+				?? throw new InvalidOperationException("Invalid message type from javascript,- equals: " + (curResult?.First?.ToString() ?? "NULL"));
 
-			IElementHandle userNameElement = await elements[i - 1].QuerySelectorAsync(_settings.TwitterXPageExpressions.ChatMemberNameText)
-				?? throw new InvalidOperationException($"Unable to get sender name element of message N{i}");
-
-			string senderName = (await userNameElement.GetPropertyAsync("innerText")).RemoteObject.Value.ToString();
-
-			if (string.IsNullOrEmpty(senderName))
-			{ throw new InvalidOperationException($"For some reason SENDER NAME of message N{i} IS EMPTY"); }
-
-			IElementHandle messageContentElement = await elements[i - 1].QuerySelectorAsync(_settings.TwitterXPageExpressions.ChatMessageText);
-
-			string? content = "";
-
-			if (messageContentElement == null)
-			{ logger.LogError("Unable to get text content element of message N {N}", i); }
-			else
-			{ content = (await messageContentElement.GetPropertyAsync("innerText"))?.RemoteObject?.Value?.ToString(); }
-
-			if (string.IsNullOrEmpty(content?.Trim()))
-			{ logger.LogError("For some reason CONTENT of message N{N} IS EMPTY", i); content = ""; }
-
-			if (memberFilter.HasFlag(ChatMember.Bot) && string.Equals(senderName, "you sent", StringComparison.OrdinalIgnoreCase))
-			{
-				messages.Add(new ChatMessage(content, ChatMember.Bot));
-			}
-			else if (memberFilter.HasFlag(ChatMember.User) && senderName != botNickName)
-			{
-				messages.Add(new ChatMessage(content, ChatMember.User));
-			}
+			string message = (curResult?.Last)?.ToString() ?? "";
+			messages.Add(new ChatMessage(message, (ChatMember)messageType));
 		}
 
 		return messages;

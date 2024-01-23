@@ -38,7 +38,9 @@ internal class TwitterXClientFactory(
 		try
 		{
 			TwitterXClient client = ActivatorUtilities.CreateInstance<TwitterXClient>(_serviceProvider, browser);
+
 			await client.WaitForLoginAsync(cancellationToken);
+
 			_twitterXClientsPool.Add(client);
 			return client;
 		}

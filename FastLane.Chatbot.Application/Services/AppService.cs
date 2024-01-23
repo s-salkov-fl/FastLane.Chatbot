@@ -3,6 +3,7 @@ using FastLane.Chatbot.Facebook.Services;
 using FastLane.Chatbot.WhatsApp.Services;
 using FastLane.Chatbot.Instagram.Services;
 using FastLane.Chatbot.TikTok.Services;
+using FastLane.Chatbot.TwitterX.Services;
 
 namespace FastLane.Chatbot.Application.Services;
 
@@ -11,7 +12,8 @@ public class AppService(
 	IWhatsAppClientFactory whatsAppClientFactory,
 	IFacebookClientFactory facebookClientFactory,
 	ITikTokClientFactory tiktokClientFactory,
-	IInstagramClientFactory instagramClientFactory
+	IInstagramClientFactory instagramClientFactory,
+	ITwitterXClientFactory twitterXClientFactory
 	) : BackgroundService
 {
 	private readonly ILogger<AppService> _logger = logger;
@@ -19,6 +21,7 @@ public class AppService(
 	private readonly IFacebookClientFactory _facebookClientFactory = facebookClientFactory;
 	private readonly ITikTokClientFactory _tiktokClientFactory = tiktokClientFactory;
 	private readonly IInstagramClientFactory _instagramClientFactory = instagramClientFactory;
+	private readonly ITwitterXClientFactory _twitterXClientFactory = twitterXClientFactory;
 
 	protected override async Task ExecuteAsync(CancellationToken stoppingToken)
 	{
@@ -27,7 +30,8 @@ public class AppService(
 			//await RunWhatsAppAsync(stoppingToken);
 			//await RunFacebookAsync(stoppingToken);
 			//await RunTikTokAsync(stoppingToken);
-			await RunInstagramAsync(stoppingToken);
+			//await RunInstagramAsync(stoppingToken);
+			await RunTwitterXAsync(stoppingToken);
 		}
 		catch (OperationCanceledException)
 		{
@@ -204,6 +208,53 @@ public class AppService(
 		};
 
 		//IReadOnlyList<ChatMessage> messages = await client.GetMessagesAsync("Li", stoppingToken);
+		//foreach (ChatMessage message in messages)
+		//{
+		//	_logger.LogInformation("{Message}", $"Message from {((message.Member == ChatMember.Bot) ? "BOT" : "USER")} - {message.Content}");
+		//}
+
+		_logger.LogInformation("Monitoring new messages");
+
+		while (!stoppingToken.IsCancellationRequested)
+		{
+			await Task.Delay(1000, stoppingToken);
+		}
+	}
+
+	public async Task RunTwitterXAsync(CancellationToken stoppingToken)
+	{
+		_logger.LogInformation("Create the TwitterX client");
+		await using ITwitterXClient client = await _twitterXClientFactory.CreateClientAsync(stoppingToken);
+
+		client.MessageReceived += async () =>
+		{
+			_logger.LogInformation("New messages event");
+			Dictionary<string, int> unreads = (Dictionary<string, int>)await client.GetChatInboxCountAsync(stoppingToken);
+
+			string outp = "New message statistics:\n";
+			foreach (KeyValuePair<string, int> messageStat in unreads)
+			{
+				outp += $"\"{messageStat.Key}\" - {messageStat.Value} unread messages\n";
+			}
+
+			_logger.LogInformation("{Stats}", outp);
+
+			foreach (KeyValuePair<string, int> messageStat in unreads)
+			{
+				IReadOnlyList<ChatMessage> messages = await client.GetMessagesAsync(messageStat.Key, stoppingToken);
+				IEnumerable<ChatMessage> userNewMessages = messages.Where(m => m.Member == ChatMember.User).Take(messageStat.Value);
+				_logger.LogInformation("New messages of {ChatName}:\n{Messages}", messageStat.Key, string.Join("\n", userNewMessages.Select(m => m.Content)));
+
+				foreach (ChatMessage message in userNewMessages)
+				{
+					string answer = $"I do not understand this: \"{message.Content}\"";
+					await client.PostAsync(messageStat.Key, answer, stoppingToken);
+					_logger.LogInformation("Posted message to {ChatName} : {Message}", messageStat.Key, answer);
+				}
+			}
+		};
+
+		//IReadOnlyList<ChatMessage> messages = await client.GetMessagesAsync("Anton Shcherbyna", stoppingToken);
 		//foreach (ChatMessage message in messages)
 		//{
 		//	_logger.LogInformation("{Message}", $"Message from {((message.Member == ChatMember.Bot) ? "BOT" : "USER")} - {message.Content}");

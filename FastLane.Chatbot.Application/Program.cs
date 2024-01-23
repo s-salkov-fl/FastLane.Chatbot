@@ -4,6 +4,7 @@ using FastLane.Chatbot.WhatsApp;
 using FastLane.Chatbot.Facebook;
 using FastLane.Chatbot.TikTok;
 using FastLane.Chatbot.Instagram;
+using FastLane.Chatbot.TwitterX;
 using FastLane.Chatbot.Contract.Configuration;
 using Microsoft.Extensions.Options;
 
@@ -23,6 +24,8 @@ IHost host = Host.CreateDefaultBuilder(args)
 		.AddTikTokChatbot()
 		.AddInstagram()
 		.AddInstagramChatbot()
+		.AddTwitterX()
+		.AddTwitterXChatbot()
 		;
 
 	services.AddHostedService<AppService>();

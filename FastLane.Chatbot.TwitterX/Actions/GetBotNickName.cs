@@ -1,5 +1,4 @@
 using FastLane.Chatbot.Contract.Configuration;
-using FastLane.Chatbot.Contract.Utility;
 using Microsoft.Extensions.Options;
 using PuppeteerSharp;
 
@@ -21,14 +20,34 @@ public partial class GetBotNickName(IOptionsMonitor<Settings> settings)
 		IPage[] pages = await browser.PagesAsync();
 		IPage page = pages.FirstOrDefault() ?? await browser.NewPageAsync();
 
-		IElementHandle botNickNameElement = await page.QuerySelectorAsync(_settings.TwitterXPageExpressions.BotNickName);
+		//File.WriteAllText("C:\\temp\\page.txt", await page.GetContentAsync());
+
+		IElementHandle botNickNameElement = await page.WaitForSelectorAsync(_settings.TwitterXPageExpressions.BotNickName);
 		if (botNickNameElement != null)
 		{
-			string nickName = (await botNickNameElement.GetPropertyAsync("innerText")).RemoteObject.Value.ToString();
+			string initalScriptText = (await botNickNameElement.GetPropertyAsync("innerText")).RemoteObject.Value.ToString();
 
-			return nickName.NormalizeSpaces();
+			int startMarker = initalScriptText.IndexOf("window.__INITIAL_STATE__");
+
+			if (startMarker == -1)
+			{ throw new InvalidOperationException("Unable to find start search marker in script 'window.__INITIAL_STATE__'"); }
+
+			int startName = initalScriptText.IndexOf("\"name\":", startMarker);
+
+			if (startMarker == -1)
+			{ throw new InvalidOperationException("Unable to find 'name:' value in script"); }
+
+			int openQuote = initalScriptText.IndexOf('\"', startName + 7);
+			int closeQuote = initalScriptText.IndexOf('\"', openQuote + 1);
+
+			if (openQuote == -1 || closeQuote == -1 || closeQuote <= openQuote)
+			{ throw new InvalidOperationException("Unable to find position on bot name after finding 'name:' value in script"); }
+
+			string botName = initalScriptText[(openQuote + 1)..closeQuote];
+
+			return botName;
 		}
 
-		throw new InvalidOperationException("Unable to obtain NickName of bot from page.");
+		throw new InvalidOperationException("Unable to obtain start element for search Name of bot from page.");
 	}
 }

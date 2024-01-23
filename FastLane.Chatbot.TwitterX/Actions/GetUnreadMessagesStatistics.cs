@@ -36,9 +36,9 @@ public partial class GetUnreadMessagesStatistics(IOptionsMonitor<Settings> setti
 
 		foreach (IElementHandle element in elements)
 		{
-			IElementHandle messagesExist = await element.QuerySelectorAsync(_settings.TwitterXPageExpressions.MessageExistSign);
+			IElementHandle[] messagesExist = await element.QuerySelectorAllAsync(_settings.TwitterXPageExpressions.MessageExistSign);
 
-			if (messagesExist != null)
+			if (messagesExist != null && messagesExist.Length == 3)
 			{
 				IElementHandle contactNameElement = await element.QuerySelectorAsync(_settings.TwitterXPageExpressions.ContactName);
 
