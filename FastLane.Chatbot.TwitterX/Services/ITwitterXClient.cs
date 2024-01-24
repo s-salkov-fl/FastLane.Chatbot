@@ -214,6 +214,7 @@ public class TwitterXClient(
 		{
 			await EnterChatAsync(userId, cancellationToken);
 			await new PostMessage(_settings).InvokeActionAsync(_browser, content, cancellationToken);
+			await CloseChatAsync(cancellationToken);
 		}
 		finally { _semaphore.Release(); }
 	}
