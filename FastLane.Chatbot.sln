@@ -22,7 +22,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FastLane.Chatbot.TikTok", "
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FastLane.Chatbot.Instagram", "FastLane.Chatbot.Instagram\FastLane.Chatbot.Instagram.csproj", "{B9C2EED1-5259-4A54-AD28-DC67122CB25A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FastLane.Chatbot.TwitterX", "FastLane.Chatbot.TwitterX\FastLane.Chatbot.TwitterX.csproj", "{DDFD59C9-88DC-4156-9C9B-517F661C6EE1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FastLane.Chatbot.TwitterX", "FastLane.Chatbot.TwitterX\FastLane.Chatbot.TwitterX.csproj", "{DDFD59C9-88DC-4156-9C9B-517F661C6EE1}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FastLane.Chatbot.WhatsAppNodeJsClient", "FastLane.Chatbot.WhatsAppNodeJsClient\FastLane.Chatbot.WhatsAppNodeJsClient.csproj", "{E878A3A4-5192-4B72-93C6-4F79051ACF31}"
+EndProject
+Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "FastLane.ChatBot.WhatsAppNodeJs", "FastLane.ChatBot.WhatsAppNodeJs\FastLane.ChatBot.WhatsAppNodeJs.njsproj", "{CAC308B3-98EA-4DBD-B0FD-653C6EBBCF11}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -62,6 +66,14 @@ Global
 		{DDFD59C9-88DC-4156-9C9B-517F661C6EE1}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{DDFD59C9-88DC-4156-9C9B-517F661C6EE1}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{DDFD59C9-88DC-4156-9C9B-517F661C6EE1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E878A3A4-5192-4B72-93C6-4F79051ACF31}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E878A3A4-5192-4B72-93C6-4F79051ACF31}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E878A3A4-5192-4B72-93C6-4F79051ACF31}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E878A3A4-5192-4B72-93C6-4F79051ACF31}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CAC308B3-98EA-4DBD-B0FD-653C6EBBCF11}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CAC308B3-98EA-4DBD-B0FD-653C6EBBCF11}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CAC308B3-98EA-4DBD-B0FD-653C6EBBCF11}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CAC308B3-98EA-4DBD-B0FD-653C6EBBCF11}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

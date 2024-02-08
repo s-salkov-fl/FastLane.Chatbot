@@ -1,6 +1,7 @@
 using FastLane.Chatbot.Contract.Model;
 using FastLane.Chatbot.Facebook.Services;
 using FastLane.Chatbot.WhatsApp.Services;
+using FastLane.Chatbot.WhatsAppNodeJsClient.Services;
 using FastLane.Chatbot.Instagram.Services;
 using FastLane.Chatbot.TikTok.Services;
 using FastLane.Chatbot.TwitterX.Services;
@@ -10,6 +11,7 @@ namespace FastLane.Chatbot.Application.Services;
 public class AppService(
 	ILogger<AppService> logger,
 	IWhatsAppClientFactory whatsAppClientFactory,
+	IWhatsAppNodeJsClientFactory whatsAppNodeJsClientFactory,
 	IFacebookClientFactory facebookClientFactory,
 	ITikTokClientFactory tiktokClientFactory,
 	IInstagramClientFactory instagramClientFactory,
@@ -18,6 +20,7 @@ public class AppService(
 {
 	private readonly ILogger<AppService> _logger = logger;
 	private readonly IWhatsAppClientFactory _whatsAppClientFactory = whatsAppClientFactory;
+	private readonly IWhatsAppNodeJsClientFactory _whatsAppNodeJsClientFactory = whatsAppNodeJsClientFactory;
 	private readonly IFacebookClientFactory _facebookClientFactory = facebookClientFactory;
 	private readonly ITikTokClientFactory _tiktokClientFactory = tiktokClientFactory;
 	private readonly IInstagramClientFactory _instagramClientFactory = instagramClientFactory;
@@ -27,11 +30,12 @@ public class AppService(
 	{
 		try
 		{
+			await RunWhatsAppNodeJsAsync(stoppingToken);
 			//await RunWhatsAppAsync(stoppingToken);
 			//await RunFacebookAsync(stoppingToken);
 			//await RunTikTokAsync(stoppingToken);
 			//await RunInstagramAsync(stoppingToken);
-			await RunTwitterXAsync(stoppingToken);
+			//await RunTwitterXAsync(stoppingToken);
 		}
 		catch (OperationCanceledException)
 		{
@@ -259,6 +263,47 @@ public class AppService(
 		//{
 		//	_logger.LogInformation("{Message}", $"Message from {((message.Member == ChatMember.Bot) ? "BOT" : "USER")} - {message.Content}");
 		//}
+
+		_logger.LogInformation("Monitoring new messages");
+
+		while (!stoppingToken.IsCancellationRequested)
+		{
+			await Task.Delay(1000, stoppingToken);
+		}
+	}
+
+	public async Task RunWhatsAppNodeJsAsync(CancellationToken stoppingToken)
+	{
+		_logger.LogInformation("Create the WhatsApp NodeJs client");
+		await using IWhatsAppNodeJsClient client = await _whatsAppNodeJsClientFactory.CreateClientAsync(stoppingToken);
+
+		client.MessageReceived += async () =>
+		{
+			_logger.LogInformation("New messages event");
+			Dictionary<string, int> unreads = (Dictionary<string, int>)await client.GetChatInboxCountAsync(stoppingToken);
+
+			string outp = "New message statistics:\n";
+			foreach (KeyValuePair<string, int> messageStat in unreads)
+			{
+				outp += $"\"{messageStat.Key}\" - {messageStat.Value} unread messages\n";
+			}
+
+			_logger.LogInformation("{Stats}", outp);
+
+			foreach (KeyValuePair<string, int> messageStat in unreads)
+			{
+				IReadOnlyList<ChatMessage> messages = await client.GetMessagesAsync(messageStat.Key, stoppingToken);
+				IEnumerable<ChatMessage> userNewMessages = messages.Where(m => m.Member == ChatMember.User).Take(messageStat.Value);
+				_logger.LogInformation("New messages of {ChatName}:\n{Messages}", messageStat.Key, string.Join("\n", userNewMessages.Select(m => m.Content)));
+
+				foreach (ChatMessage message in userNewMessages)
+				{
+					string answer = $"I do not understand this: \"{message.Content}\"";
+					await client.PostAsync(messageStat.Key, answer, stoppingToken);
+					_logger.LogInformation("Posted message to {ChatName} : {Message}", messageStat.Key, answer);
+				}
+			}
+		};
 
 		_logger.LogInformation("Monitoring new messages");
 

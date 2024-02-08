@@ -7,6 +7,7 @@ using FastLane.Chatbot.Instagram;
 using FastLane.Chatbot.TwitterX;
 using FastLane.Chatbot.Contract.Configuration;
 using Microsoft.Extensions.Options;
+using FastLane.Chatbot.WhatsAppNodeJsClient;
 
 IHost host = Host.CreateDefaultBuilder(args)
 	.ConfigureServices((context, services) =>
@@ -26,6 +27,8 @@ IHost host = Host.CreateDefaultBuilder(args)
 		.AddInstagramChatbot()
 		.AddTwitterX()
 		.AddTwitterXChatbot()
+		.AddWhatsAppNodeJs()
+		.AddWhatsAppNodeJsChatbot()
 		;
 
 	services.AddHostedService<AppService>();

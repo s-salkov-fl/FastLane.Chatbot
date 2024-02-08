@@ -1,0 +1,17 @@
+{
+  "name": "fast-lane.chat-bot.whats-app-node-js",
+  "version": "0.0.0",
+  "description": "FastLane.ChatBot.WhatsAppNodeJs",
+  "main": "app.js",
+  "author": {
+    "name": ""
+  },
+  "devDependencies": {
+    "eslint": "^8.21.0"
+  },
+  "eslintConfig": {},
+  "dependencies": {
+    "qrcode-terminal": "^0.12.0",
+    "whatsapp-web.js": "^1.23.0"
+  }
+}
