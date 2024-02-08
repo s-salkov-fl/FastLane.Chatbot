@@ -361,3 +361,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/FastLane.ChatBot.WhatsAppNodeJs/FastLane.Chatbot.WhatsAppNodeJs/session/Crashpad
+/FastLane.ChatBot.WhatsAppNodeJs/.wwebjs_cache
+/FastLane.ChatBot.WhatsAppNodeJs/FastLane.Chatbot.WhatsAppNodeJs/session
